@@ -25,7 +25,7 @@ func (i actionItem) FilterValue() string {
 type actionDelegate struct{}
 
 func (d actionDelegate) Height() int                             { return 2 }
-func (d actionDelegate) Spacing() int                            { return 0 }
+func (d actionDelegate) Spacing() int                            { return 1 } // Generous space between action cards
 func (d actionDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d actionDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(actionItem)
@@ -42,20 +42,20 @@ func (d actionDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 	if isSelected {
 		header := lipgloss.JoinHorizontal(
 			lipgloss.Center,
-			styles.ItemSelected.Render(fmt.Sprintf("▶ %-28s", title)),
+			styles.ItemCardSelected.Render(fmt.Sprintf("▶  %-28s", title)),
 			" ",
 			cmdBadge,
 		)
-		descLine := styles.ItemDescSelected.Render("  " + desc)
+		descLine := styles.ItemDescSelected.Render(desc)
 		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	} else {
 		header := lipgloss.JoinHorizontal(
 			lipgloss.Center,
-			styles.ItemNormal.Render(fmt.Sprintf("  %-28s", title)),
+			styles.ItemCardNormal.Render(fmt.Sprintf("   %-28s", title)),
 			" ",
 			cmdBadge,
 		)
-		descLine := styles.ItemDesc.Render("  " + desc)
+		descLine := styles.ItemDescNormal.Render(desc)
 		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	}
 }
@@ -245,7 +245,7 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 		items[idx] = actionItem{action: a}
 	}
 
-	bodyHeight := height - 4
+	bodyHeight := height - 6
 	if bodyHeight < 5 {
 		bodyHeight = 5
 	}
@@ -256,7 +256,7 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.SetFilteringEnabled(true)
-	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorMuted)
+	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 
 	return ActionsScreen{
 		list:        l,
@@ -272,7 +272,7 @@ func (a *ActionsScreen) IsInitialized() bool {
 
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
-		bodyHeight := height - 4
+		bodyHeight := height - 6
 		if a.state.Toast != nil && a.state.Toast.Message != "" {
 			bodyHeight -= 1
 		}
@@ -311,7 +311,7 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 func (a ActionsScreen) View() string {
 	var sections []string
 
-	// 1. Header (Pinned at Line 1)
+	// 1. Dynamic Header with Stepper & Location
 	sections = append(sections, components.RenderHeader(a.state, a.state.Width))
 
 	// 2. Toast (if any)
@@ -320,10 +320,10 @@ func (a ActionsScreen) View() string {
 		sections = append(sections, toast)
 	}
 
-	// 3. Body
+	// 3. Spacious Actions List
 	sections = append(sections, a.list.View())
 
-	// 4. Footer (Pinned at Bottom)
+	// 4. Footer
 	keys := []components.KeyHelp{
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Open Action"},
