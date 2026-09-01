@@ -26,7 +26,7 @@ func TestModelInitialization(t *testing.T) {
 func TestModelWindowResize(t *testing.T) {
 	m := NewModel()
 	updatedModel, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
-	
+
 	mod, ok := updatedModel.(Model)
 	if !ok {
 		t.Fatal("expected model type Model")
@@ -41,5 +41,43 @@ func TestModelWindowResize(t *testing.T) {
 	viewOutput := mod.View()
 	if viewOutput == "" {
 		t.Fatal("expected non-empty view output")
+	}
+}
+
+func TestActionsForModules(t *testing.T) {
+	modules := screens.GetModules()
+	totalActions := 0
+	for _, mod := range modules {
+		actions := screens.GetActionsForModule(mod.ID)
+		if len(actions) == 0 {
+			t.Fatalf("module %s has 0 actions", mod.ID)
+		}
+		totalActions += len(actions)
+	}
+
+	// Verify all 14 modules have their actions mapped
+	if totalActions != 108 {
+		t.Fatalf("expected 108 total actions across modules, got %d", totalActions)
+	}
+}
+
+func TestNavigationToActionsAndBack(t *testing.T) {
+	var model tea.Model = NewModel()
+	model, _ = model.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Press Enter to go into first module (Orders)
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+	m := model.(Model)
+	if m.state.CurrentScreen != state.ScreenActions {
+		t.Fatalf("expected ScreenActions, got %v", m.state.CurrentScreen)
+	}
+
+	// Press Esc to go back to Home
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenHome {
+		t.Fatalf("expected ScreenHome after Esc, got %v", m.state.CurrentScreen)
 	}
 }

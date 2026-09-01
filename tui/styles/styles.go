@@ -9,16 +9,17 @@ var (
 	ColorPrimary     = lipgloss.Color("#0B72E7") // Razorpay Royal Blue
 	ColorNavy        = lipgloss.Color("#0C2340") // Dark Navy
 	ColorSecondary   = lipgloss.Color("#53B5FD") // Sky Blue
-	ColorBackground  = lipgloss.Color("#0F172A") // Slate Background
-	ColorCardBg      = lipgloss.Color("#1E293B") // Dark Card Slate
-	ColorActiveCard  = lipgloss.Color("#1E3A8A") // Highlighted Card Navy
+	ColorBackground  = lipgloss.Color("#0B0F19") // Deep Black Slate
+	ColorCardBg      = lipgloss.Color("#131D2F") // Elevated Card Slate
 	ColorText        = lipgloss.Color("#F8FAFC") // Off-white Text
-	ColorMuted       = lipgloss.Color("#94A3B8") // Gray Subtext
-	ColorBorder      = lipgloss.Color("#334155") // Subtle Border
-	ColorBorderFocus = lipgloss.Color("#3B82F6") // Focused Border Blue
+	ColorMuted       = lipgloss.Color("#64748B") // Slate Subtext
+	ColorMutedLight  = lipgloss.Color("#94A3B8") // Gray Light
+	ColorBorder      = lipgloss.Color("#1E293B") // Subtle Border
+	ColorBorderFocus = lipgloss.Color("#3B82F6") // Focused Blue
 	ColorSuccess     = lipgloss.Color("#10B981") // Green
-	ColorWarning     = lipgloss.Color("#F59E0B") // Amber / Yellow
+	ColorWarning     = lipgloss.Color("#F59E0B") // Amber
 	ColorError       = lipgloss.Color("#EF4444") // Red
+	ColorAccentTag   = lipgloss.Color("#1D4ED8") // Tag Blue
 )
 
 // Lipgloss Styles
@@ -32,10 +33,12 @@ var (
 
 	TitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(ColorPrimary)
+			Foreground(ColorSecondary).
+			MarginBottom(1)
 
 	SubtitleStyle = lipgloss.NewStyle().
-			Foreground(ColorMuted)
+			Foreground(ColorMuted).
+			MarginBottom(1)
 
 	// Mode Badges
 	BadgeTestStyle = lipgloss.NewStyle().
@@ -56,6 +59,12 @@ var (
 				Background(ColorError).
 				Padding(0, 1)
 
+	BadgeCountStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(ColorSecondary).
+			Background(ColorNavy).
+			Padding(0, 1)
+
 	// Header & Breadcrumbs
 	HeaderContainer = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, true, false).
@@ -67,7 +76,7 @@ var (
 			Bold(true).
 			Foreground(ColorSecondary)
 
-	// Items
+	// Items (Spacious & Clean)
 	ItemNormal = lipgloss.NewStyle().
 			Padding(0, 2).
 			Foreground(ColorText)
@@ -80,24 +89,14 @@ var (
 
 	ItemDesc = lipgloss.NewStyle().
 			Foreground(ColorMuted).
-			PaddingLeft(2)
+			PaddingLeft(2).
+			MarginBottom(1)
 
 	ItemDescSelected = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#E0F2FE")).
 				Background(ColorPrimary).
-				PaddingLeft(2)
-
-	CardStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(ColorBorder).
-			Padding(1, 2).
-			Margin(0, 1)
-
-	CardActiveStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(ColorBorderFocus).
-			Padding(1, 2).
-			Margin(0, 1)
+				PaddingLeft(2).
+				MarginBottom(1)
 
 	// Footer & Keybindings
 	FooterContainer = lipgloss.NewStyle().
@@ -111,7 +110,7 @@ var (
 			Foreground(ColorPrimary)
 
 	KeyDescStyle = lipgloss.NewStyle().
-			Foreground(ColorMuted)
+			Foreground(ColorMutedLight)
 
 	// Toasts & Notifications
 	ToastSuccessStyle = lipgloss.NewStyle().

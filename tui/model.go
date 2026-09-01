@@ -7,9 +7,10 @@ import (
 )
 
 type Model struct {
-	state *state.SessionState
-	home  screens.HomeScreen
-	ready bool
+	state   *state.SessionState
+	home    screens.HomeScreen
+	actions screens.ActionsScreen
+	ready   bool
 }
 
 func NewModel() Model {
@@ -33,6 +34,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state.Width = msg.Width
 		m.state.Height = msg.Height
 		m.home.SetSize(msg.Width, msg.Height)
+		m.actions.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
@@ -41,7 +43,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":
-			if m.state.CurrentScreen == state.ScreenHome {
+			// Allow quit from Home and Actions screen directly
+			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
 				return m, tea.Quit
 			}
 		case "esc":
@@ -52,11 +55,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Route to active screen
+	// Screen Router
 	switch m.state.CurrentScreen {
 	case state.ScreenHome:
 		var cmd tea.Cmd
+		prevScreen := m.state.CurrentScreen
 		m.home, cmd = m.home.Update(msg)
+		cmds = append(cmds, cmd)
+
+		// If user selected a module, initialize the actions screen for that module
+		if m.state.CurrentScreen == state.ScreenActions && prevScreen == state.ScreenHome {
+			m.actions = screens.NewActionsScreen(m.state, m.state.SelectedModule.ID, m.state.Width, m.state.Height)
+		}
+
+	case state.ScreenActions:
+		var cmd tea.Cmd
+		m.actions, cmd = m.actions.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -71,6 +85,8 @@ func (m Model) View() string {
 	switch m.state.CurrentScreen {
 	case state.ScreenHome:
 		return m.home.View()
+	case state.ScreenActions:
+		return m.actions.View()
 	default:
 		return m.home.View()
 	}

@@ -13,39 +13,51 @@ import (
 	"github.com/razorpay/razorpay-cli/tui/styles"
 )
 
-type item struct {
+type moduleItem struct {
 	module state.ModuleItem
 }
 
-func (i item) Title() string       { return i.module.Title }
-func (i item) Description() string { return i.module.Description }
-func (i item) FilterValue() string { return i.module.ID + " " + i.module.Title + " " + i.module.Description }
+func (i moduleItem) Title() string       { return i.module.Title }
+func (i moduleItem) Description() string { return i.module.Description }
+func (i moduleItem) FilterValue() string {
+	return i.module.ID + " " + i.module.Title + " " + i.module.Description
+}
 
-type itemDelegate struct{}
+type moduleDelegate struct{}
 
-func (d itemDelegate) Height() int                             { return 2 }
-func (d itemDelegate) Spacing() int                            { return 0 }
-func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
+func (d moduleDelegate) Height() int                             { return 2 }
+func (d moduleDelegate) Spacing() int                            { return 1 }
+func (d moduleDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+func (d moduleDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i, ok := listItem.(moduleItem)
 	if !ok {
 		return
 	}
 
 	title := i.module.Title
 	desc := i.module.Description
-	countBadge := fmt.Sprintf("[%d cmds]", i.module.CommandCount)
+	countBadge := styles.BadgeCountStyle.Render(fmt.Sprintf("%d cmds", i.module.CommandCount))
 
 	isSelected := index == m.Index()
 
 	if isSelected {
-		titleLine := styles.ItemSelected.Render(fmt.Sprintf("▶ %-26s %s", title, countBadge))
-		descLine := styles.ItemDescSelected.Render("  " + desc)
-		fmt.Fprintf(w, "%s\n%s", titleLine, descLine)
+		header := lipgloss.JoinHorizontal(
+			lipgloss.Center,
+			styles.ItemSelected.Render(fmt.Sprintf("▶ %-26s", title)),
+			" ",
+			countBadge,
+		)
+		descLine := styles.ItemDescSelected.Render(desc)
+		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	} else {
-		titleLine := styles.ItemNormal.Render(fmt.Sprintf("  %-26s %s", title, countBadge))
-		descLine := styles.ItemDesc.Render("  " + desc)
-		fmt.Fprintf(w, "%s\n%s", titleLine, descLine)
+		header := lipgloss.JoinHorizontal(
+			lipgloss.Center,
+			styles.ItemNormal.Render(fmt.Sprintf("  %-26s", title)),
+			" ",
+			countBadge,
+		)
+		descLine := styles.ItemDesc.Render(desc)
+		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	}
 }
 
@@ -77,16 +89,16 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 	rawModules := GetModules()
 	items := make([]list.Item, len(rawModules))
 	for idx, m := range rawModules {
-		items[idx] = item{module: m}
+		items[idx] = moduleItem{module: m}
 	}
 
-	l := list.New(items, itemDelegate{}, width-4, height-7)
-	l.Title = "📦 Razorpay API Modules (Select a module to view actions)"
+	l := list.New(items, moduleDelegate{}, width-4, height-7)
+	l.Title = "📦 Razorpay API Modules  (Select a module & press Enter)"
 	l.Styles.Title = styles.TitleStyle
-	l.SetShowStatusBar(true)
+	l.SetShowStatusBar(false)
+	l.SetShowHelp(false) // Hide default duplicate help
 	l.SetFilteringEnabled(true)
 	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorMuted)
-	l.Styles.HelpStyle = lipgloss.NewStyle().Foreground(styles.ColorMuted)
 
 	return HomeScreen{
 		list:  l,
@@ -100,6 +112,7 @@ func (h *HomeScreen) SetSize(width, height int) {
 
 func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if h.list.FilterState() == list.Filtering {
@@ -107,7 +120,7 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 		}
 		switch msg.String() {
 		case "enter":
-			if sel, ok := h.list.SelectedItem().(item); ok {
+			if sel, ok := h.list.SelectedItem().(moduleItem); ok {
 				h.state.SelectedModule = sel.module
 				h.state.PushScreen(state.ScreenActions, sel.module.Title)
 			}
@@ -137,11 +150,11 @@ func (h HomeScreen) View() string {
 	sb.WriteString(h.list.View())
 	sb.WriteString("\n")
 
-	// Contextual Footer Keys
+	// Clean Unified Contextual Footer
 	keys := []components.KeyHelp{
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Select Module"},
-		{Key: "/", Desc: "Filter"},
+		{Key: "/", Desc: "Search"},
 		{Key: "c", Desc: "Config"},
 		{Key: "q", Desc: "Quit"},
 	}

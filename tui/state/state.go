@@ -31,10 +31,21 @@ type ModuleItem struct {
 	CommandCount int
 }
 
+type ActionItem struct {
+	ID          string
+	Title       string
+	Description string
+	CLICommand  string
+	HTTPMethod  string
+	APIPath     string
+	IsForm      bool
+}
+
 type SessionState struct {
 	CurrentScreen  ScreenType
 	ScreenStack    []ScreenType
 	SelectedModule ModuleItem
+	SelectedAction ActionItem
 	Breadcrumbs    []string
 	Client         *api.Client
 	KeyID          string
