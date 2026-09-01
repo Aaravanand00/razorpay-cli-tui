@@ -10,15 +10,17 @@ type Model struct {
 	state   *state.SessionState
 	home    screens.HomeScreen
 	actions screens.ActionsScreen
+	config  screens.ConfigScreen
 	ready   bool
 }
 
 func NewModel() Model {
 	sess := state.NewSessionState()
 	return Model{
-		state: sess,
-		home:  screens.NewHomeScreen(sess, 80, 24),
-		ready: false,
+		state:  sess,
+		home:   screens.NewHomeScreen(sess, 80, 24),
+		config: screens.NewConfigScreen(sess, 80, 24),
+		ready:  false,
 	}
 }
 
@@ -35,6 +37,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state.Height = msg.Height
 		m.home.SetSize(msg.Width, msg.Height)
 		m.actions.SetSize(msg.Width, msg.Height)
+		m.config.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
@@ -63,14 +66,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.home, cmd = m.home.Update(msg)
 		cmds = append(cmds, cmd)
 
-		// If user selected a module, initialize the actions screen for that module
 		if m.state.CurrentScreen == state.ScreenActions && prevScreen == state.ScreenHome {
 			m.actions = screens.NewActionsScreen(m.state, m.state.SelectedModule.ID, m.state.Width, m.state.Height)
+		} else if m.state.CurrentScreen == state.ScreenConfig && prevScreen == state.ScreenHome {
+			m.config = screens.NewConfigScreen(m.state, m.state.Width, m.state.Height)
 		}
 
 	case state.ScreenActions:
 		var cmd tea.Cmd
 		m.actions, cmd = m.actions.Update(msg)
+		cmds = append(cmds, cmd)
+
+	case state.ScreenConfig:
+		var cmd tea.Cmd
+		m.config, cmd = m.config.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
@@ -87,6 +96,8 @@ func (m Model) View() string {
 		return m.home.View()
 	case state.ScreenActions:
 		return m.actions.View()
+	case state.ScreenConfig:
+		return m.config.View()
 	default:
 		return m.home.View()
 	}

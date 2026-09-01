@@ -92,11 +92,16 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 		items[idx] = moduleItem{module: m}
 	}
 
-	l := list.New(items, moduleDelegate{}, width-4, height-7)
+	listHeight := height - 8
+	if listHeight < 5 {
+		listHeight = 5
+	}
+
+	l := list.New(items, moduleDelegate{}, width-4, listHeight)
 	l.Title = "📦 Razorpay API Modules  (Select a module & press Enter)"
 	l.Styles.Title = styles.TitleStyle
 	l.SetShowStatusBar(false)
-	l.SetShowHelp(false) // Hide default duplicate help
+	l.SetShowHelp(false)
 	l.SetFilteringEnabled(true)
 	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorMuted)
 
@@ -107,7 +112,11 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 }
 
 func (h *HomeScreen) SetSize(width, height int) {
-	h.list.SetSize(width-4, height-7)
+	listHeight := height - 8
+	if listHeight < 5 {
+		listHeight = 5
+	}
+	h.list.SetSize(width-4, listHeight)
 }
 
 func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
@@ -122,7 +131,11 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 		case "enter":
 			if sel, ok := h.list.SelectedItem().(moduleItem); ok {
 				h.state.SelectedModule = sel.module
-				h.state.PushScreen(state.ScreenActions, sel.module.Title)
+				if sel.module.ID == "configure" {
+					h.state.PushScreen(state.ScreenConfig, "⚙️ Configure")
+				} else {
+					h.state.PushScreen(state.ScreenActions, sel.module.Title)
+				}
 			}
 		case "c":
 			h.state.PushScreen(state.ScreenConfig, "⚙️ Configure")
@@ -136,7 +149,7 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 func (h HomeScreen) View() string {
 	var sb strings.Builder
 
-	// Header
+	// Header (ALWAYS Line 1)
 	sb.WriteString(components.RenderHeader(h.state, h.state.Width))
 	sb.WriteString("\n")
 
@@ -150,12 +163,12 @@ func (h HomeScreen) View() string {
 	sb.WriteString(h.list.View())
 	sb.WriteString("\n")
 
-	// Clean Unified Contextual Footer
+	// Contextual Footer
 	keys := []components.KeyHelp{
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Select Module"},
 		{Key: "/", Desc: "Search"},
-		{Key: "c", Desc: "Config"},
+		{Key: "c", Desc: "Configure Keys"},
 		{Key: "q", Desc: "Quit"},
 	}
 	sb.WriteString(components.RenderFooter(h.state, h.state.Width, keys))

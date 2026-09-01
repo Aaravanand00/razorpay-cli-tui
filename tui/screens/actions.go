@@ -246,7 +246,12 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 		items[idx] = actionItem{action: a}
 	}
 
-	l := list.New(items, actionDelegate{}, width-4, height-7)
+	listHeight := height - 8
+	if listHeight < 5 {
+		listHeight = 5
+	}
+
+	l := list.New(items, actionDelegate{}, width-4, listHeight)
 	l.Title = fmt.Sprintf("⚡ Available Actions for %s", s.SelectedModule.Title)
 	l.Styles.Title = styles.TitleStyle
 	l.SetShowStatusBar(false)
@@ -268,7 +273,11 @@ func (a *ActionsScreen) IsInitialized() bool {
 
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
-		a.list.SetSize(width-4, height-7)
+		listHeight := height - 8
+		if listHeight < 5 {
+			listHeight = 5
+		}
+		a.list.SetSize(width-4, listHeight)
 	}
 }
 
@@ -300,7 +309,7 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 func (a ActionsScreen) View() string {
 	var sb strings.Builder
 
-	// Header
+	// Header (ALWAYS Line 1)
 	sb.WriteString(components.RenderHeader(a.state, a.state.Width))
 	sb.WriteString("\n")
 
