@@ -33,12 +33,10 @@ var (
 
 	TitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(ColorSecondary).
-			MarginBottom(1)
+			Foreground(ColorSecondary)
 
 	SubtitleStyle = lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			MarginBottom(1)
+			Foreground(ColorMuted)
 
 	// Mode Badges
 	BadgeTestStyle = lipgloss.NewStyle().
@@ -65,12 +63,11 @@ var (
 			Background(ColorNavy).
 			Padding(0, 1)
 
-	// Header & Breadcrumbs
+	// Header & Breadcrumbs (Height = 2 lines total including border)
 	HeaderContainer = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, true, false).
 			BorderForeground(ColorBorder).
-			Padding(0, 1).
-			MarginBottom(1)
+			Padding(0, 1)
 
 	BreadcrumbStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -89,21 +86,18 @@ var (
 
 	ItemDesc = lipgloss.NewStyle().
 			Foreground(ColorMuted).
-			PaddingLeft(2).
-			MarginBottom(1)
+			PaddingLeft(2)
 
 	ItemDescSelected = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#E0F2FE")).
 				Background(ColorPrimary).
-				PaddingLeft(2).
-				MarginBottom(1)
+				PaddingLeft(2)
 
-	// Footer & Keybindings
+	// Footer & Keybindings (Height = 2 lines total including border)
 	FooterContainer = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), true, false, false, false).
 			BorderForeground(ColorBorder).
-			Padding(0, 1).
-			MarginTop(1)
+			Padding(0, 1)
 
 	KeyStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -117,13 +111,11 @@ var (
 				Bold(true).
 				Foreground(lipgloss.Color("#FFFFFF")).
 				Background(ColorSuccess).
-				Padding(0, 2).
-				MarginBottom(1)
+				Padding(0, 2)
 
 	ToastErrorStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Background(ColorError).
-			Padding(0, 2).
-			MarginBottom(1)
+			Padding(0, 2)
 )

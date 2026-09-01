@@ -3,7 +3,6 @@ package screens
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,7 +25,7 @@ func (i actionItem) FilterValue() string {
 type actionDelegate struct{}
 
 func (d actionDelegate) Height() int                             { return 2 }
-func (d actionDelegate) Spacing() int                            { return 1 }
+func (d actionDelegate) Spacing() int                            { return 0 }
 func (d actionDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d actionDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(actionItem)
@@ -47,7 +46,7 @@ func (d actionDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 			" ",
 			cmdBadge,
 		)
-		descLine := styles.ItemDescSelected.Render(desc)
+		descLine := styles.ItemDescSelected.Render("  " + desc)
 		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	} else {
 		header := lipgloss.JoinHorizontal(
@@ -56,7 +55,7 @@ func (d actionDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 			" ",
 			cmdBadge,
 		)
-		descLine := styles.ItemDesc.Render(desc)
+		descLine := styles.ItemDesc.Render("  " + desc)
 		fmt.Fprintf(w, "%s\n%s", header, descLine)
 	}
 }
@@ -246,12 +245,12 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 		items[idx] = actionItem{action: a}
 	}
 
-	listHeight := height - 8
-	if listHeight < 5 {
-		listHeight = 5
+	bodyHeight := height - 4
+	if bodyHeight < 5 {
+		bodyHeight = 5
 	}
 
-	l := list.New(items, actionDelegate{}, width-4, listHeight)
+	l := list.New(items, actionDelegate{}, width-2, bodyHeight)
 	l.Title = fmt.Sprintf("⚡ Available Actions for %s", s.SelectedModule.Title)
 	l.Styles.Title = styles.TitleStyle
 	l.SetShowStatusBar(false)
@@ -273,11 +272,14 @@ func (a *ActionsScreen) IsInitialized() bool {
 
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
-		listHeight := height - 8
-		if listHeight < 5 {
-			listHeight = 5
+		bodyHeight := height - 4
+		if a.state.Toast != nil && a.state.Toast.Message != "" {
+			bodyHeight -= 1
 		}
-		a.list.SetSize(width-4, listHeight)
+		if bodyHeight < 5 {
+			bodyHeight = 5
+		}
+		a.list.SetSize(width-2, bodyHeight)
 	}
 }
 
@@ -307,23 +309,21 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 }
 
 func (a ActionsScreen) View() string {
-	var sb strings.Builder
+	var sections []string
 
-	// Header (ALWAYS Line 1)
-	sb.WriteString(components.RenderHeader(a.state, a.state.Width))
-	sb.WriteString("\n")
+	// 1. Header (Pinned at Line 1)
+	sections = append(sections, components.RenderHeader(a.state, a.state.Width))
 
-	// Toast (if any)
+	// 2. Toast (if any)
 	toast := components.RenderToast(a.state)
 	if toast != "" {
-		sb.WriteString(toast + "\n")
+		sections = append(sections, toast)
 	}
 
-	// Actions List
-	sb.WriteString(a.list.View())
-	sb.WriteString("\n")
+	// 3. Body
+	sections = append(sections, a.list.View())
 
-	// Contextual Footer Keys
+	// 4. Footer (Pinned at Bottom)
 	keys := []components.KeyHelp{
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Open Action"},
@@ -331,7 +331,7 @@ func (a ActionsScreen) View() string {
 		{Key: "Esc", Desc: "Back to Modules"},
 		{Key: "q", Desc: "Quit"},
 	}
-	sb.WriteString(components.RenderFooter(a.state, a.state.Width, keys))
+	sections = append(sections, components.RenderFooter(a.state, a.state.Width, keys))
 
-	return sb.String()
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }

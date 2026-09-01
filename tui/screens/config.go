@@ -122,29 +122,26 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 }
 
 func (c ConfigScreen) View() string {
-	var sb strings.Builder
+	var sections []string
 
-	// Header
-	sb.WriteString(components.RenderHeader(c.state, c.width))
-	sb.WriteString("\n")
+	// 1. Header
+	sections = append(sections, components.RenderHeader(c.state, c.width))
 
-	// Toast
+	// 2. Toast
 	toast := components.RenderToast(c.state)
 	if toast != "" {
-		sb.WriteString(toast + "\n")
+		sections = append(sections, toast)
 	}
 
+	// 3. Form Body
 	title := styles.TitleStyle.Render("⚙️  Configure Razorpay API Credentials")
-	desc := styles.SubtitleStyle.Render("Enter your Razorpay Key ID and Secret. Credentials are saved securely to ~/.razorpay/config.yaml")
+	desc := styles.SubtitleStyle.Render("Enter your Razorpay Key ID and Secret. Saved securely to ~/.razorpay/config.yaml")
 
-	sb.WriteString(title + "\n" + desc + "\n\n")
-
-	// Form Box
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorderFocus).
 		Padding(1, 3).
-		Width(c.width - 8)
+		Width(c.width - 6)
 
 	var formContent strings.Builder
 	formContent.WriteString(c.keyInput.View() + "\n\n")
@@ -153,17 +150,17 @@ func (c ConfigScreen) View() string {
 	hint := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Tip: Use 'rzp_test_...' for Test Mode or 'rzp_live_...' for Live Mode.")
 	formContent.WriteString(hint)
 
-	sb.WriteString(box.Render(formContent.String()))
-	sb.WriteString("\n")
+	body := title + "\n" + desc + "\n" + box.Render(formContent.String())
+	sections = append(sections, body)
 
-	// Footer
+	// 4. Footer
 	keys := []components.KeyHelp{
 		{Key: "Tab", Desc: "Switch Field"},
 		{Key: "Enter", Desc: "Save Credentials"},
 		{Key: "Esc", Desc: "Cancel / Back"},
 		{Key: "q", Desc: "Quit"},
 	}
-	sb.WriteString(components.RenderFooter(c.state, c.width, keys))
+	sections = append(sections, components.RenderFooter(c.state, c.width, keys))
 
-	return sb.String()
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
