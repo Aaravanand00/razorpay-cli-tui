@@ -314,7 +314,7 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 				a.state.SelectedAction = sel.action
 				if sel.action.IsForm {
 					// Enforce write/edit permission check
-					allowed, errMsg := a.state.CanPerformAction(true)
+					allowed, errMsg := a.state.CanPerformActionItem(sel.action)
 					if !allowed {
 						toastCmd := a.state.SetToast(errMsg, true)
 						return *a, toastCmd

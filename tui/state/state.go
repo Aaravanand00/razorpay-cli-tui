@@ -199,17 +199,36 @@ func (s *SessionState) HasCredentials() bool {
 	return strings.HasPrefix(s.KeyID, "rzp_test_")
 }
 
-func (s *SessionState) CanPerformAction(isWrite bool) (bool, string) {
+func (s *SessionState) CanPerformActionItem(action ActionItem) (bool, string) {
+	isWrite := action.HTTPMethod != "GET" && action.HTTPMethod != "LOCAL"
+
 	if s.IsReadOnly && isWrite {
-		return false, "🔒 Action Locked: Create/Update operations are disabled in Read-Only mode."
+		return false, fmt.Sprintf("🔒 Action Locked: '%s' is a write operation and is disabled in Read-Only mode.", action.Title)
 	}
+
 	if s.ActiveMode == "live" {
 		if !s.HasLiveCredentials() {
-			return false, "🔒 Action Locked: Live API key ('rzp_live_...') required for this operation. Press 'c' to configure."
+			return false, fmt.Sprintf("🔒 Action Locked: '%s' requires valid Live API keys ('rzp_live_...'). Press 'c' to configure.", action.Title)
 		}
 	} else {
 		if !s.HasTestCredentials() {
-			return false, "🔒 Action Locked: Test API key ('rzp_test_...') required for this operation. Press 'c' to configure."
+			return false, fmt.Sprintf("🔒 Action Locked: '%s' requires valid Test API keys ('rzp_test_...'). Press 'c' to configure.", action.Title)
+		}
+	}
+	return true, ""
+}
+
+func (s *SessionState) CanPerformAction(isWrite bool) (bool, string) {
+	if s.IsReadOnly && isWrite {
+		return false, "🔒 Action Locked: Write operations are disabled in Read-Only mode."
+	}
+	if s.ActiveMode == "live" {
+		if !s.HasLiveCredentials() {
+			return false, "🔒 Action Locked: Live API key ('rzp_live_...') required. Press 'c' to configure."
+		}
+	} else {
+		if !s.HasTestCredentials() {
+			return false, "🔒 Action Locked: Test API key ('rzp_test_...') required. Press 'c' to configure."
 		}
 	}
 	return true, ""
