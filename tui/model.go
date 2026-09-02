@@ -15,13 +15,7 @@ type Model struct {
 }
 
 func NewModel() Model {
-	sess := state.NewSessionState()
-	return Model{
-		state:  sess,
-		home:   screens.NewHomeScreen(sess, 80, 24),
-		config: screens.NewConfigScreen(sess, 80, 24),
-		ready:  false,
-	}
+	return NewModelWithOptions(false, "")
 }
 
 func NewModelWithOptions(readOnly bool, initialMode string) Model {
@@ -31,6 +25,15 @@ func NewModelWithOptions(readOnly bool, initialMode string) Model {
 		sess.ActiveMode = initialMode
 		sess.SyncActiveCredentials()
 	}
+
+	if readOnly {
+		sess.SetToast("🛡️ Safe Read-Only Mode Active (Write operations locked)", false)
+	} else if initialMode == "live" && !sess.HasCredentials() {
+		sess.SetToast("● Live Production Mode (No keys configured). Press 'c' to add Live keys.", false)
+	} else if initialMode == "test" && !sess.HasCredentials() {
+		sess.SetToast("▲ Test Sandbox Mode (No keys configured). Press 'c' to add Test keys.", false)
+	}
+
 	return Model{
 		state:  sess,
 		home:   screens.NewHomeScreen(sess, 80, 24),

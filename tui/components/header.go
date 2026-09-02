@@ -39,7 +39,13 @@ func RenderHeader(s *state.SessionState, width int) string {
 	// Auth, Mode & Read-Only Badge
 	var badge string
 	if !s.HasCredentials() {
-		badge = styles.BadgeNoAuthStyle.Render("👁️ EXPLORE MODE (NO KEYS)")
+		if s.IsReadOnly {
+			badge = styles.BadgeNoAuthStyle.Render("🛡️ READ-ONLY (NO KEYS)")
+		} else if s.ActiveMode == "live" {
+			badge = styles.BadgeLiveStyle.Render("● LIVE (NO KEYS CONFIGURED)")
+		} else {
+			badge = styles.BadgeTestStyle.Render("▲ TEST (NO KEYS CONFIGURED)")
+		}
 	} else if s.IsReadOnly {
 		if s.IsLiveMode {
 			badge = styles.BadgeLiveStyle.Render("🛡️ LIVE (READ-ONLY): " + s.MaskedKey())
