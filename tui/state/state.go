@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/razorpay/razorpay-cli/api"
@@ -48,35 +49,119 @@ type SessionState struct {
 	SelectedAction ActionItem
 	Breadcrumbs    []string
 	Client         *api.Client
-	KeyID          string
-	KeySecret      string
-	IsLiveMode     bool
-	Toast          *Toast
-	Width          int
-	Height         int
+
+	// Dual Mode & Credentials
+	ActiveMode    string // "test" or "live"
+	TestKeyID     string
+	TestKeySecret string
+	LiveKeyID     string
+	LiveKeySecret string
+
+	// Active Credentials
+	KeyID      string
+	KeySecret  string
+	IsLiveMode bool
+	IsReadOnly bool
+
+	Toast  *Toast
+	Width  int
+	Height int
 }
 
 func NewSessionState() *SessionState {
 	config.Init()
-	keyID := config.KeyID()
-	keySecret := config.KeySecret()
 
-	isLive := strings.HasPrefix(keyID, "rzp_live_")
+	testKeyID := config.TestKeyID()
+	testKeySecret := config.TestKeySecret()
+	liveKeyID := config.LiveKeyID()
+	liveKeySecret := config.LiveKeySecret()
 
-	var client *api.Client
-	if keyID != "" && keySecret != "" {
-		client = api.New(keyID, keySecret)
+	// Legacy fallback
+	legacyKeyID := config.KeyID()
+	legacyKeySecret := config.KeySecret()
+
+	if testKeyID == "" && strings.HasPrefix(legacyKeyID, "rzp_test_") {
+		testKeyID = legacyKeyID
+		testKeySecret = legacyKeySecret
+	}
+	if liveKeyID == "" && strings.HasPrefix(legacyKeyID, "rzp_live_") {
+		liveKeyID = legacyKeyID
+		liveKeySecret = legacyKeySecret
 	}
 
-	return &SessionState{
+	activeMode := config.ActiveMode()
+
+	s := &SessionState{
 		CurrentScreen: ScreenHome,
 		ScreenStack:   []ScreenType{},
 		Breadcrumbs:   []string{"Razorpay"},
-		Client:        client,
-		KeyID:         keyID,
-		KeySecret:     keySecret,
-		IsLiveMode:    isLive,
+		ActiveMode:    activeMode,
+		TestKeyID:     testKeyID,
+		TestKeySecret: testKeySecret,
+		LiveKeyID:     liveKeyID,
+		LiveKeySecret: liveKeySecret,
 	}
+
+	s.SyncActiveCredentials()
+	return s
+}
+
+func (s *SessionState) SyncActiveCredentials() {
+	if s.ActiveMode == "live" {
+		s.KeyID = s.LiveKeyID
+		s.KeySecret = s.LiveKeySecret
+		s.IsLiveMode = true
+	} else {
+		s.KeyID = s.TestKeyID
+		s.KeySecret = s.TestKeySecret
+		s.IsLiveMode = false
+	}
+
+	if s.KeyID != "" && s.KeySecret != "" {
+		s.Client = api.New(s.KeyID, s.KeySecret)
+	} else {
+		s.Client = nil
+	}
+}
+
+func (s *SessionState) ToggleMode() string {
+	if s.ActiveMode == "test" {
+		if s.LiveKeyID == "" {
+			s.SetToast("No Live API keys configured. Press 'c' to add Live keys.", true)
+			return "No Live keys configured"
+		}
+		s.ActiveMode = "live"
+		config.SetActiveMode("live")
+		s.SyncActiveCredentials()
+		msg := fmt.Sprintf("Switched to ● LIVE MODE (%s)", s.MaskedKey())
+		s.SetToast(msg, false)
+		return msg
+	} else {
+		if s.TestKeyID == "" {
+			s.SetToast("No Test API keys configured. Press 'c' to add Test keys.", true)
+			return "No Test keys configured"
+		}
+		s.ActiveMode = "test"
+		config.SetActiveMode("test")
+		s.SyncActiveCredentials()
+		msg := fmt.Sprintf("Switched to ▲ TEST MODE (%s)", s.MaskedKey())
+		s.SetToast(msg, false)
+		return msg
+	}
+}
+
+func (s *SessionState) MaskedKey() string {
+	if s.KeyID == "" {
+		return "No Key"
+	}
+	if len(s.KeyID) <= 12 {
+		return s.KeyID
+	}
+	return s.KeyID[:9] + "..." + s.KeyID[len(s.KeyID)-4:]
+}
+
+func (s *SessionState) HasCredentials() bool {
+	return s.KeyID != "" && s.KeySecret != ""
 }
 
 func (s *SessionState) PushScreen(next ScreenType, crumb string) {

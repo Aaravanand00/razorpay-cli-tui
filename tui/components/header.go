@@ -36,22 +36,20 @@ func RenderHeader(s *state.SessionState, width int) string {
 
 	stepper := lipgloss.JoinHorizontal(lipgloss.Center, " ", step1, arrow, step2, arrow, step3)
 
-	// Auth & Mode Badge
+	// Auth, Mode & Read-Only Badge
 	var badge string
-	if s.KeyID == "" {
-		badge = styles.BadgeNoAuthStyle.Render("! NO CREDENTIALS")
+	if !s.HasCredentials() {
+		badge = styles.BadgeNoAuthStyle.Render("👁️ EXPLORE MODE (NO KEYS)")
+	} else if s.IsReadOnly {
+		if s.IsLiveMode {
+			badge = styles.BadgeLiveStyle.Render("🛡️ LIVE (READ-ONLY): " + s.MaskedKey())
+		} else {
+			badge = styles.BadgeTestStyle.Render("🛡️ TEST (READ-ONLY): " + s.MaskedKey())
+		}
 	} else if s.IsLiveMode {
-		maskedKey := s.KeyID
-		if len(maskedKey) > 12 {
-			maskedKey = maskedKey[:9] + "..." + maskedKey[len(maskedKey)-4:]
-		}
-		badge = styles.BadgeLiveStyle.Render("● LIVE: " + maskedKey)
+		badge = styles.BadgeLiveStyle.Render("● LIVE MODE: " + s.MaskedKey())
 	} else {
-		maskedKey := s.KeyID
-		if len(maskedKey) > 12 {
-			maskedKey = maskedKey[:9] + "..." + maskedKey[len(maskedKey)-4:]
-		}
-		badge = styles.BadgeTestStyle.Render("▲ TEST: " + maskedKey)
+		badge = styles.BadgeTestStyle.Render("▲ TEST MODE: " + s.MaskedKey())
 	}
 
 	leftTop := lipgloss.JoinHorizontal(lipgloss.Center, logo, stepper)

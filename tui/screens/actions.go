@@ -328,7 +328,8 @@ func (a ActionsScreen) View() string {
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Open Action"},
 		{Key: "/", Desc: "Search"},
-		{Key: "Esc", Desc: "Back to Modules"},
+		{Key: "m", Desc: "Test/Live"},
+		{Key: "Esc", Desc: "Back"},
 		{Key: "q", Desc: "Quit"},
 	}
 	sections = append(sections, components.RenderFooter(a.state, a.state.Width, keys))

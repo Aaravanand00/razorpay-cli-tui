@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/razorpay/razorpay-cli/api"
 	"github.com/razorpay/razorpay-cli/config"
 	"github.com/razorpay/razorpay-cli/tui/components"
 	"github.com/razorpay/razorpay-cli/tui/state"
@@ -14,41 +13,67 @@ import (
 )
 
 type ConfigScreen struct {
-	state       *state.SessionState
-	keyInput    textinput.Model
-	secretInput textinput.Model
-	focusIndex  int
-	width       int
-	height      int
+	state          *state.SessionState
+	activeMode     string // "test" or "live"
+	testKeyInput   textinput.Model
+	testSecInput   textinput.Model
+	liveKeyInput   textinput.Model
+	liveSecInput   textinput.Model
+	focusIndex     int // 0: mode switch, 1: test key, 2: test secret, 3: live key, 4: live secret
+	width          int
+	height         int
 }
 
 func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
-	ki := textinput.New()
-	ki.Placeholder = "rzp_test_... or rzp_live_..."
-	ki.SetValue(s.KeyID)
-	ki.Focus()
-	ki.Prompt = " Key ID:     "
-	ki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	ki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	ki.Width = 50
+	tki := textinput.New()
+	tki.Placeholder = "rzp_test_..."
+	tki.SetValue(s.TestKeyID)
+	tki.Prompt = " Test Key ID:     "
+	tki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
+	tki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
+	tki.Width = 48
 
-	si := textinput.New()
-	si.Placeholder = "Your API Key Secret"
-	si.SetValue(s.KeySecret)
-	si.EchoMode = textinput.EchoPassword
-	si.EchoCharacter = '•'
-	si.Prompt = " Key Secret: "
-	si.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	si.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	si.Width = 50
+	tsi := textinput.New()
+	tsi.Placeholder = "Test Key Secret"
+	tsi.SetValue(s.TestKeySecret)
+	tsi.EchoMode = textinput.EchoPassword
+	tsi.EchoCharacter = '•'
+	tsi.Prompt = " Test Key Secret: "
+	tsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
+	tsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
+	tsi.Width = 48
+
+	lki := textinput.New()
+	lki.Placeholder = "rzp_live_..."
+	lki.SetValue(s.LiveKeyID)
+	lki.Prompt = " Live Key ID:     "
+	lki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
+	lki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
+	lki.Width = 48
+
+	lsi := textinput.New()
+	lsi.Placeholder = "Live Key Secret"
+	lsi.SetValue(s.LiveKeySecret)
+	lsi.EchoMode = textinput.EchoPassword
+	lsi.EchoCharacter = '•'
+	lsi.Prompt = " Live Key Secret: "
+	lsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
+	lsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
+	lsi.Width = 48
+
+	// Default focus on test key
+	tki.Focus()
 
 	return ConfigScreen{
-		state:       s,
-		keyInput:    ki,
-		secretInput: si,
-		focusIndex:  0,
-		width:       width,
-		height:      height,
+		state:        s,
+		activeMode:   s.ActiveMode,
+		testKeyInput: tki,
+		testSecInput: tsi,
+		liveKeyInput: lki,
+		liveSecInput: lsi,
+		focusIndex:   1,
+		width:        width,
+		height:       height,
 	}
 }
 
@@ -64,61 +89,79 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab", "down":
-			c.focusIndex = (c.focusIndex + 1) % 2
-			if c.focusIndex == 0 {
-				c.keyInput.Focus()
-				c.secretInput.Blur()
-			} else {
-				c.keyInput.Blur()
-				c.secretInput.Focus()
-			}
+			c.setFocus((c.focusIndex + 1) % 5)
 		case "shift+tab", "up":
-			c.focusIndex = (c.focusIndex - 1 + 2) % 2
+			c.setFocus((c.focusIndex - 1 + 5) % 5)
+		case " ", "m":
 			if c.focusIndex == 0 {
-				c.keyInput.Focus()
-				c.secretInput.Blur()
-			} else {
-				c.keyInput.Blur()
-				c.secretInput.Focus()
+				if c.activeMode == "test" {
+					c.activeMode = "live"
+				} else {
+					c.activeMode = "test"
+				}
 			}
 		case "enter":
-			keyID := strings.TrimSpace(c.keyInput.Value())
-			keySecret := strings.TrimSpace(c.secretInput.Value())
+			testKey := strings.TrimSpace(c.testKeyInput.Value())
+			testSec := strings.TrimSpace(c.testSecInput.Value())
+			liveKey := strings.TrimSpace(c.liveKeyInput.Value())
+			liveSec := strings.TrimSpace(c.liveSecInput.Value())
 
-			if keyID == "" || keySecret == "" {
-				c.state.SetToast("Key ID and Key Secret cannot be empty", true)
-				return *c, nil
-			}
-
-			err := config.Save(keyID, keySecret)
+			err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
 			if err != nil {
 				c.state.SetToast("Failed to save config: "+err.Error(), true)
 				return *c, nil
 			}
 
-			// Update runtime session state
-			c.state.KeyID = keyID
-			c.state.KeySecret = keySecret
-			c.state.IsLiveMode = strings.HasPrefix(keyID, "rzp_live_")
-			c.state.Client = api.New(keyID, keySecret)
-			c.state.SetToast("Credentials saved successfully!", false)
+			// Update state
+			c.state.ActiveMode = c.activeMode
+			c.state.TestKeyID = testKey
+			c.state.TestKeySecret = testSec
+			c.state.LiveKeyID = liveKey
+			c.state.LiveKeySecret = liveSec
+			c.state.SyncActiveCredentials()
 
-			// Pop back to previous screen
+			c.state.SetToast("Credentials & Active Profile saved successfully!", false)
 			c.state.PopScreen()
 			return *c, nil
 		}
 	}
 
 	var cmd tea.Cmd
-	if c.focusIndex == 0 {
-		c.keyInput, cmd = c.keyInput.Update(msg)
+	switch c.focusIndex {
+	case 1:
+		c.testKeyInput, cmd = c.testKeyInput.Update(msg)
 		cmds = append(cmds, cmd)
-	} else {
-		c.secretInput, cmd = c.secretInput.Update(msg)
+	case 2:
+		c.testSecInput, cmd = c.testSecInput.Update(msg)
+		cmds = append(cmds, cmd)
+	case 3:
+		c.liveKeyInput, cmd = c.liveKeyInput.Update(msg)
+		cmds = append(cmds, cmd)
+	case 4:
+		c.liveSecInput, cmd = c.liveSecInput.Update(msg)
 		cmds = append(cmds, cmd)
 	}
 
 	return *c, tea.Batch(cmds...)
+}
+
+func (c *ConfigScreen) setFocus(idx int) {
+	c.focusIndex = idx
+	c.testKeyInput.Blur()
+	c.testSecInput.Blur()
+	c.liveKeyInput.Blur()
+	c.liveSecInput.Blur()
+
+	switch idx {
+	case 1:
+		c.testKeyInput.Focus()
+	case 2:
+		c.testSecInput.Focus()
+	case 3:
+		c.liveKeyInput.Focus()
+	case 4:
+		c.liveSecInput.Focus()
+	}
 }
 
 func (c ConfigScreen) View() string {
@@ -134,16 +177,17 @@ func (c ConfigScreen) View() string {
 		sections = append(sections, toastView)
 	}
 
-	// 3. Footer Keys (Using Ctrl+C for Quit because q is a typeable character in inputs)
+	// 3. Footer Keys
 	keys := []components.KeyHelp{
-		{Key: "Tab", Desc: "Switch Field"},
-		{Key: "Enter", Desc: "Save Credentials"},
-		{Key: "Esc", Desc: "Cancel / Back"},
+		{Key: "Tab / ↑↓", Desc: "Switch Field"},
+		{Key: "Space", Desc: "Toggle Mode"},
+		{Key: "Enter", Desc: "Save All"},
+		{Key: "Esc", Desc: "Back"},
 		{Key: "Ctrl+C", Desc: "Quit"},
 	}
 	footerView := components.RenderFooter(c.state, c.width, keys)
 
-	// Calculate Available Height to pin footer strictly to the bottom
+	// Calculate Available Height
 	headerHeight := lipgloss.Height(headerView)
 	footerHeight := lipgloss.Height(footerView)
 	toastHeight := 0
@@ -152,37 +196,66 @@ func (c ConfigScreen) View() string {
 	}
 
 	bodyHeight := c.height - headerHeight - footerHeight - toastHeight
-	if bodyHeight < 8 {
-		bodyHeight = 8
+	if bodyHeight < 12 {
+		bodyHeight = 12
 	}
 
-	// Form Body Elements
-	title := styles.TitleStyle.Render("⚙️  Configure Razorpay API Credentials")
-	desc := styles.SubtitleStyle.Render("Enter your Razorpay Key ID and Secret. Saved securely to ~/.razorpay/config.yaml")
+	// Active Mode Switcher Row
+	var modeSwitch string
+	if c.activeMode == "test" {
+		testPill := styles.BadgeTestStyle.Render("● TEST MODE (Sandbox Active)")
+		livePill := lipgloss.NewStyle().Foreground(styles.ColorTextDim).Render("○ LIVE MODE (Production)")
+		modeSwitch = lipgloss.JoinHorizontal(lipgloss.Center, "   Active Environment:  ", testPill, "   ", livePill)
+	} else {
+		testPill := lipgloss.NewStyle().Foreground(styles.ColorTextDim).Render("○ TEST MODE (Sandbox)")
+		livePill := styles.BadgeLiveStyle.Render("● LIVE MODE (Production Active)")
+		modeSwitch = lipgloss.JoinHorizontal(lipgloss.Center, "   Active Environment:  ", testPill, "   ", livePill)
+	}
 
-	box := lipgloss.NewStyle().
+	if c.focusIndex == 0 {
+		modeSwitch = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(styles.ColorBorderFocus).
+			Padding(0, 1).
+			Render("▶ " + modeSwitch + "  (Press Space to toggle)")
+	}
+
+	// Test Box
+	testBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorderFocus).
-		Padding(1, 3).
-		Width(c.width - 6)
+		BorderForeground(styles.ColorWarning).
+		Padding(0, 2).
+		Width((c.width - 8) / 2)
 
-	var formContent strings.Builder
-	formContent.WriteString(c.keyInput.View() + "\n\n")
-	formContent.WriteString(c.secretInput.View() + "\n\n")
+	testContent := styles.BadgeTestStyle.Render("▲ TEST SANDBOX CREDENTIALS") + "\n\n" +
+		c.testKeyInput.View() + "\n" +
+		c.testSecInput.View()
 
-	hint := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Tip: Use 'rzp_test_...' for Test Mode or 'rzp_live_...' for Live Mode.")
-	formContent.WriteString(hint)
+	// Live Box
+	liveBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorSuccess).
+		Padding(0, 2).
+		Width((c.width - 8) / 2)
 
-	rawBody := title + "\n" + desc + "\n\n" + box.Render(formContent.String())
+	liveContent := styles.BadgeLiveStyle.Render("● LIVE PRODUCTION CREDENTIALS") + "\n\n" +
+		c.liveKeyInput.View() + "\n" +
+		c.liveSecInput.View()
 
-	// Container that stretches body to full available height, pushing footer to bottom
+	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "  ", liveBoxStyle.Render(liveContent))
+
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Tip: Enter both keys once. You can switch Test ⇄ Live instantly anytime by pressing 'm'!")
+
+	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
+	desc := styles.SubtitleStyle.Render("Manage your Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
+
+	rawBody := title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
+
 	bodyContainer := lipgloss.NewStyle().
 		Height(bodyHeight).
 		Width(c.width - 2)
 
 	sections = append(sections, bodyContainer.Render(rawBody))
-
-	// 4. Footer at bottom
 	sections = append(sections, footerView)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)

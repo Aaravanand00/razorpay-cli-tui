@@ -24,6 +24,21 @@ func NewModel() Model {
 	}
 }
 
+func NewModelWithOptions(readOnly bool, initialMode string) Model {
+	sess := state.NewSessionState()
+	sess.IsReadOnly = readOnly
+	if initialMode == "live" || initialMode == "test" {
+		sess.ActiveMode = initialMode
+		sess.SyncActiveCredentials()
+	}
+	return Model{
+		state:  sess,
+		home:   screens.NewHomeScreen(sess, 80, 24),
+		config: screens.NewConfigScreen(sess, 80, 24),
+		ready:  false,
+	}
+}
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
@@ -46,9 +61,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":
-			// Allow quit from Home and Actions screen directly
 			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
 				return m, tea.Quit
+			}
+		case "m":
+			// Instant 1-Key Mode Switcher (Test ⇄ Live) on navigation screens
+			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
+				m.state.ToggleMode()
+				return m, nil
 			}
 		case "esc":
 			if m.state.CurrentScreen != state.ScreenHome {

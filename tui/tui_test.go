@@ -81,3 +81,46 @@ func TestNavigationToActionsAndBack(t *testing.T) {
 		t.Fatalf("expected ScreenHome after Esc, got %v", m.state.CurrentScreen)
 	}
 }
+
+func TestDualProfileAndModeToggle(t *testing.T) {
+	m := NewModel()
+	m.state.TestKeyID = "rzp_test_123456789"
+	m.state.TestKeySecret = "test_sec_123"
+	m.state.LiveKeyID = "rzp_live_987654321"
+	m.state.LiveKeySecret = "live_sec_987"
+	m.state.ActiveMode = "test"
+	m.state.SyncActiveCredentials()
+
+	if m.state.KeyID != "rzp_test_123456789" {
+		t.Fatalf("expected test key active, got %s", m.state.KeyID)
+	}
+
+	// Press 'm' to toggle mode to Live
+	var model tea.Model = m
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+
+	m = model.(Model)
+	if m.state.ActiveMode != "live" {
+		t.Fatalf("expected active mode 'live' after toggle, got %s", m.state.ActiveMode)
+	}
+	if m.state.KeyID != "rzp_live_987654321" {
+		t.Fatalf("expected live key active, got %s", m.state.KeyID)
+	}
+
+	// Press 'm' to toggle back to Test
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+	m = model.(Model)
+	if m.state.ActiveMode != "test" {
+		t.Fatalf("expected active mode 'test' after second toggle, got %s", m.state.ActiveMode)
+	}
+}
+
+func TestReadOnlyOption(t *testing.T) {
+	m := NewModelWithOptions(true, "test")
+	if !m.state.IsReadOnly {
+		t.Fatal("expected IsReadOnly to be true")
+	}
+	if m.state.ActiveMode != "test" {
+		t.Fatalf("expected activeMode test, got %s", m.state.ActiveMode)
+	}
+}
