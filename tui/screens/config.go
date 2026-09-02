@@ -190,23 +190,21 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				} else if testKey != "" && testSec == "" {
 					validationErr = "Please enter the Test Key Secret for your Test Key ID"
 				}
-			} else {
-				// User is on Active Environment toggle
-				if c.activeMode == "live" {
-					if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
-						validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
-					} else if liveKey != "" && liveSec == "" {
-						validationErr = "Please enter the Live Key Secret for your Live Key ID"
-					} else if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
-						validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+			}
+
+			// 3. Active Mode Lock Validation
+			if validationErr == "" {
+				if c.activeMode == "live" && (liveKey == "" || liveSec == "") {
+					if testKey != "" {
+						validationErr = "Active mode is set to LIVE, but Live keys are empty. Switch Active Environment to Test or enter Live keys."
+					} else {
+						validationErr = "Please enter valid Live Key ID (rzp_live_...) and Secret."
 					}
-				} else {
-					if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
-						validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
-					} else if testKey != "" && testSec == "" {
-						validationErr = "Please enter the Test Key Secret for your Test Key ID"
-					} else if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
-						validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+				} else if c.activeMode == "test" && (testKey == "" || testSec == "") {
+					if liveKey != "" {
+						validationErr = "Active mode is set to TEST, but Test keys are empty. Switch Active Environment to Live or enter Test keys."
+					} else {
+						validationErr = "Please enter valid Test Key ID (rzp_test_...) and Secret."
 					}
 				}
 			}
@@ -216,14 +214,14 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				return *c, cmd
 			}
 
-			// 3. Save to config
+			// 4. Save to config
 			err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
 			if err != nil {
 				cmd := c.state.SetToast("Failed to save config: "+err.Error(), true)
 				return *c, cmd
 			}
 
-			// 4. Update state
+			// 5. Update state
 			c.state.ActiveMode = c.activeMode
 			c.state.TestKeyID = testKey
 			c.state.TestKeySecret = testSec

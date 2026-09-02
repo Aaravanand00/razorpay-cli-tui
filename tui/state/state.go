@@ -99,6 +99,13 @@ func NewSessionState() *SessionState {
 
 	activeMode := config.ActiveMode()
 
+	// Auto-lock mode based on available keys
+	if liveKeyID != "" && testKeyID == "" {
+		activeMode = "live"
+	} else if testKeyID != "" && liveKeyID == "" {
+		activeMode = "test"
+	}
+
 	s := &SessionState{
 		CurrentScreen: ScreenHome,
 		ScreenStack:   []ScreenType{},
@@ -114,6 +121,14 @@ func NewSessionState() *SessionState {
 	return s
 }
 
+func (s *SessionState) HasTestCredentials() bool {
+	return strings.HasPrefix(s.TestKeyID, "rzp_test_") && s.TestKeySecret != ""
+}
+
+func (s *SessionState) HasLiveCredentials() bool {
+	return strings.HasPrefix(s.LiveKeyID, "rzp_live_") && s.LiveKeySecret != ""
+}
+
 func (s *SessionState) SyncActiveCredentials() {
 	if s.ActiveMode == "live" {
 		s.KeyID = s.LiveKeyID
@@ -125,7 +140,7 @@ func (s *SessionState) SyncActiveCredentials() {
 		s.IsLiveMode = false
 	}
 
-	if s.KeyID != "" && s.KeySecret != "" {
+	if s.HasCredentials() {
 		s.Client = api.New(s.KeyID, s.KeySecret)
 	} else {
 		s.Client = nil
@@ -134,7 +149,7 @@ func (s *SessionState) SyncActiveCredentials() {
 
 func (s *SessionState) ToggleMode() string {
 	if s.ActiveMode == "test" {
-		if s.LiveKeyID == "" {
+		if !s.HasLiveCredentials() {
 			s.SetToast("No Live API keys configured. Press 'c' to add Live keys.", true)
 			return "No Live keys configured"
 		}
@@ -145,7 +160,7 @@ func (s *SessionState) ToggleMode() string {
 		s.SetToast(msg, false)
 		return msg
 	} else {
-		if s.TestKeyID == "" {
+		if !s.HasTestCredentials() {
 			s.SetToast("No Test API keys configured. Press 'c' to add Test keys.", true)
 			return "No Test keys configured"
 		}
@@ -176,6 +191,22 @@ func (s *SessionState) HasCredentials() bool {
 		return strings.HasPrefix(s.KeyID, "rzp_live_")
 	}
 	return strings.HasPrefix(s.KeyID, "rzp_test_")
+}
+
+func (s *SessionState) CanPerformAction(isWrite bool) (bool, string) {
+	if s.IsReadOnly && isWrite {
+		return false, "Write operations are disabled in Read-Only mode."
+	}
+	if s.ActiveMode == "live" {
+		if !s.HasLiveCredentials() {
+			return false, "Live credentials required for this action. Press 'c' to configure Live keys."
+		}
+	} else {
+		if !s.HasTestCredentials() {
+			return false, "Test credentials required for this action. Press 'c' to configure Test keys."
+		}
+	}
+	return true, ""
 }
 
 func (s *SessionState) PushScreen(next ScreenType, crumb string) {
