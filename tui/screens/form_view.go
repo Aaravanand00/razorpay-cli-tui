@@ -247,6 +247,12 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 				continue
 			}
 
+			// Smart Phone / Contact Normalizer (+91 default for 10 digits, preserves international)
+			if f.Key == "contact" || f.Key == "customer_contact" || f.Key == "phone" {
+				payload[f.Key] = normalizePhoneNumber(val)
+				continue
+			}
+
 			payload[f.Key] = val
 		}
 
@@ -357,7 +363,7 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 		return []FormField{
 			{Key: "name", Label: "Customer Name", Placeholder: "e.g. Rahul Sharma", Required: true, Input: createInput("Rahul Sharma", false)},
 			{Key: "email", Label: "Email Address", Placeholder: "e.g. rahul@example.com", Required: true, Input: createInput("rahul@example.com", false)},
-			{Key: "contact", Label: "Phone / Contact", Placeholder: "e.g. +919876543210", Input: createInput("+919876543210", false)},
+			{Key: "contact", Label: "Phone / Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
 			{Key: "notes", Label: "Customer Notes", Placeholder: "e.g. Enterprise client", Input: createInput("Enterprise client", false)},
 		}
 	}
@@ -377,7 +383,7 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 			{Key: "description", Label: "Description", Placeholder: "e.g. Payment for Invoice #102", Required: true, Input: createInput("Payment for order", false)},
 			{Key: "customer_name", Label: "Customer Name", Placeholder: "e.g. Amit Kumar", Input: createInput("Amit Kumar", false)},
 			{Key: "customer_email", Label: "Customer Email", Placeholder: "e.g. amit@example.com", Input: createInput("amit@example.com", false)},
-			{Key: "customer_contact", Label: "Customer Contact", Placeholder: "e.g. +919876543210", Input: createInput("+919876543210", false)},
+			{Key: "customer_contact", Label: "Customer Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
 		}
 	}
 
@@ -551,4 +557,37 @@ func (fv FormViewScreen) View() string {
 	sections = append(sections, footerView)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+func normalizePhoneNumber(phone string) string {
+	cleaned := strings.TrimSpace(phone)
+	if cleaned == "" {
+		return ""
+	}
+
+	// Remove common spacing, hyphens, parentheses
+	r := strings.NewReplacer(" ", "", "-", "", "(", "", ")", "")
+	cleaned = r.Replace(cleaned)
+
+	// If already starts with '+', keep international format
+	if strings.HasPrefix(cleaned, "+") {
+		return cleaned
+	}
+
+	// If starts with '91' and has 12 digits, prepend '+'
+	if strings.HasPrefix(cleaned, "91") && len(cleaned) == 12 {
+		return "+" + cleaned
+	}
+
+	// If 10-digit standard mobile number, auto-prepend '+91'
+	if len(cleaned) == 10 {
+		return "+91" + cleaned
+	}
+
+	// If starts with '0' and has 11 digits (e.g. 09876543210)
+	if strings.HasPrefix(cleaned, "0") && len(cleaned) == 11 {
+		return "+91" + cleaned[1:]
+	}
+
+	return cleaned
 }
