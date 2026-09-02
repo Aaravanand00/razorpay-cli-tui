@@ -21,6 +21,7 @@ func NewModel() Model {
 func NewModelWithOptions(readOnly bool, initialMode string) Model {
 	sess := state.NewSessionState()
 	sess.IsReadOnly = readOnly
+	sess.ExplicitModeFlag = initialMode
 	if initialMode == "live" || initialMode == "test" {
 		sess.ActiveMode = initialMode
 		sess.SyncActiveCredentials()

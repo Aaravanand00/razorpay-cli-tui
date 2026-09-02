@@ -58,11 +58,12 @@ type SessionState struct {
 	Client         *api.Client
 
 	// Dual Mode & Credentials
-	ActiveMode    string // "test" or "live"
-	TestKeyID     string
-	TestKeySecret string
-	LiveKeyID     string
-	LiveKeySecret string
+	ActiveMode       string // "test" or "live"
+	ExplicitModeFlag string // "test", "live", or "" (from CLI flag)
+	TestKeyID        string
+	TestKeySecret    string
+	LiveKeyID        string
+	LiveKeySecret    string
 
 	// Active Credentials
 	KeyID      string
@@ -107,14 +108,15 @@ func NewSessionState() *SessionState {
 	}
 
 	s := &SessionState{
-		CurrentScreen: ScreenHome,
-		ScreenStack:   []ScreenType{},
-		Breadcrumbs:   []string{"Razorpay"},
-		ActiveMode:    activeMode,
-		TestKeyID:     testKeyID,
-		TestKeySecret: testKeySecret,
-		LiveKeyID:     liveKeyID,
-		LiveKeySecret: liveKeySecret,
+		CurrentScreen:    ScreenHome,
+		ScreenStack:      []ScreenType{},
+		Breadcrumbs:      []string{"Razorpay"},
+		ActiveMode:       activeMode,
+		ExplicitModeFlag: "",
+		TestKeyID:        testKeyID,
+		TestKeySecret:    testKeySecret,
+		LiveKeyID:        liveKeyID,
+		LiveKeySecret:    liveKeySecret,
 	}
 
 	s.SyncActiveCredentials()
