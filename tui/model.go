@@ -126,8 +126,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case state.ScreenConfig:
 		var cmd tea.Cmd
+		prevScreen := m.state.CurrentScreen
 		m.config, cmd = m.config.Update(msg)
 		cmds = append(cmds, cmd)
+
+		if prevScreen == state.ScreenConfig && m.state.CurrentScreen == state.ScreenTable {
+			cmds = append(cmds, m.table.Init())
+		}
 	}
 
 	return m, tea.Batch(cmds...)

@@ -534,7 +534,26 @@ func (tv TableViewScreen) View() string {
 	sections = append(sections, "\n"+title)
 
 	// 4. Main Body Content
-	if tv.loading {
+	if !tv.state.HasCredentials() {
+		modeName := "Test Sandbox"
+		if tv.state.IsLiveMode {
+			modeName = "Live Production"
+		}
+		authCard := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(styles.ColorSecondary).
+			Background(styles.ColorCardBg).
+			Padding(2, 4).
+			Width(tv.width - 6).
+			Render(fmt.Sprintf(
+				"🔑  Razorpay API Credentials Required (%s)\n\n"+
+					"To fetch and view live %s records from Razorpay Cloud, please enter your API Key ID and Key Secret.\n\n"+
+					"👉 Press [c] to Configure Credentials\n"+
+					"👉 Press [Esc] to go back to Actions",
+				modeName, tv.action.Title,
+			))
+		sections = append(sections, "\n"+authCard)
+	} else if tv.loading {
 		loadingMsg := lipgloss.NewStyle().
 			Padding(4, 2).
 			Render(fmt.Sprintf("%s Fetching live records from Razorpay API (%s)...", tv.spinner.View(), tv.action.APIPath))
@@ -545,7 +564,7 @@ func (tv TableViewScreen) View() string {
 			BorderForeground(styles.ColorError).
 			Padding(1, 2).
 			Width(tv.width - 6).
-			Render(fmt.Sprintf("⚠️  API Error:\n%s\n\n💡 Tip: Press 'r' to Retry or 'c' to Configure Credentials.", tv.errMsg))
+			Render(fmt.Sprintf("⚠️  API Request Failed:\n%s\n\n💡 Tip: Press 'r' to Retry or 'c' to Configure Credentials.", tv.errMsg))
 		sections = append(sections, "\n"+errCard)
 	} else if len(tv.rawDataList) == 0 {
 		emptyCard := lipgloss.NewStyle().
