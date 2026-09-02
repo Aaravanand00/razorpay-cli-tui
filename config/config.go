@@ -53,7 +53,11 @@ func KeyID() string {
 	if mode == "test" && TestKeyID() != "" {
 		return TestKeyID()
 	}
-	return viper.GetString("key_id")
+	k := viper.GetString("key_id")
+	if strings.HasPrefix(k, "rzp_test_") || strings.HasPrefix(k, "rzp_live_") {
+		return k
+	}
+	return ""
 }
 
 func KeySecret() string {
@@ -70,7 +74,6 @@ func KeySecret() string {
 func ActiveMode() string {
 	m := strings.ToLower(strings.TrimSpace(viper.GetString("active_mode")))
 	if m == "" {
-		// Fallback: if legacy key_id starts with rzp_live, default to live
 		if strings.HasPrefix(viper.GetString("key_id"), "rzp_live_") {
 			return "live"
 		}
@@ -84,18 +87,32 @@ func SetActiveMode(mode string) {
 }
 
 func TestKeyID() string {
-	return viper.GetString("test.key_id")
+	k := viper.GetString("test.key_id")
+	if strings.HasPrefix(k, "rzp_test_") {
+		return k
+	}
+	return ""
 }
 
 func TestKeySecret() string {
+	if TestKeyID() == "" {
+		return ""
+	}
 	return viper.GetString("test.key_secret")
 }
 
 func LiveKeyID() string {
-	return viper.GetString("live.key_id")
+	k := viper.GetString("live.key_id")
+	if strings.HasPrefix(k, "rzp_live_") {
+		return k
+	}
+	return ""
 }
 
 func LiveKeySecret() string {
+	if LiveKeyID() == "" {
+		return ""
+	}
 	return viper.GetString("live.key_secret")
 }
 
@@ -126,7 +143,7 @@ func Save(keyID, keySecret string) error {
 		viper.Set("active_mode", "live")
 		viper.Set("live.key_id", keyID)
 		viper.Set("live.key_secret", keySecret)
-	} else {
+	} else if strings.HasPrefix(keyID, "rzp_test_") {
 		viper.Set("active_mode", "test")
 		viper.Set("test.key_id", keyID)
 		viper.Set("test.key_secret", keySecret)
@@ -152,10 +169,10 @@ func SaveDualConfig(activeMode, testKeyID, testKeySecret, liveKeyID, liveKeySecr
 	viper.Set("live.key_secret", liveKeySecret)
 
 	// Set active primary keys for backward compatibility
-	if activeMode == "live" && liveKeyID != "" {
+	if activeMode == "live" && strings.HasPrefix(liveKeyID, "rzp_live_") {
 		viper.Set("key_id", liveKeyID)
 		viper.Set("key_secret", liveKeySecret)
-	} else if testKeyID != "" {
+	} else if strings.HasPrefix(testKeyID, "rzp_test_") {
 		viper.Set("key_id", testKeyID)
 		viper.Set("key_secret", testKeySecret)
 	}

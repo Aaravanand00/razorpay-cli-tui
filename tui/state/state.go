@@ -169,7 +169,13 @@ func (s *SessionState) MaskedKey() string {
 }
 
 func (s *SessionState) HasCredentials() bool {
-	return s.KeyID != "" && s.KeySecret != ""
+	if s.KeyID == "" || s.KeySecret == "" {
+		return false
+	}
+	if s.IsLiveMode {
+		return strings.HasPrefix(s.KeyID, "rzp_live_")
+	}
+	return strings.HasPrefix(s.KeyID, "rzp_test_")
 }
 
 func (s *SessionState) PushScreen(next ScreenType, crumb string) {
