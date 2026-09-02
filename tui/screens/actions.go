@@ -245,7 +245,7 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 		items[idx] = actionItem{action: a}
 	}
 
-	bodyHeight := height - 6
+	bodyHeight := height - 7
 	if bodyHeight < 5 {
 		bodyHeight = 5
 	}
@@ -282,7 +282,7 @@ func (a *ActionsScreen) ResetFilter() {
 
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
-		bodyHeight := height - 6
+		bodyHeight := height - 7
 		if a.state.Toast != nil && a.state.Toast.Message != "" {
 			bodyHeight -= 3
 		}

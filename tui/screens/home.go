@@ -92,7 +92,7 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 		items[idx] = moduleItem{module: m}
 	}
 
-	bodyHeight := height - 6
+	bodyHeight := height - 7
 	if bodyHeight < 5 {
 		bodyHeight = 5
 	}
@@ -122,7 +122,7 @@ func (h *HomeScreen) ResetFilter() {
 }
 
 func (h *HomeScreen) SetSize(width, height int) {
-	bodyHeight := height - 6
+	bodyHeight := height - 7
 	if h.state.Toast != nil && h.state.Toast.Message != "" {
 		bodyHeight -= 3
 	}

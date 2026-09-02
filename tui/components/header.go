@@ -75,6 +75,6 @@ func RenderHeader(s *state.SessionState, width int) string {
 		styles.LocationActive.Render(crumbs),
 	)
 
-	fullHeader := lipgloss.JoinVertical(lipgloss.Left, line1, locationText)
+	fullHeader := lipgloss.JoinVertical(lipgloss.Left, line1, "", locationText)
 	return styles.HeaderContainer.Width(width - 2).Render(fullHeader)
 }
