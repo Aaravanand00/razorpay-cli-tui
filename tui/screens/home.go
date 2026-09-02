@@ -103,6 +103,8 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.SetFilteringEnabled(true)
+	l.KeyMap.Quit.Unbind()
+	l.KeyMap.ForceQuit.Unbind()
 	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 
 	return HomeScreen{
@@ -143,6 +145,9 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 			break
 		}
 		switch msg.String() {
+		case "esc":
+			// On Home Screen, Esc does nothing (prevents quitting). Only q or Ctrl+C quits.
+			return *h, nil
 		case "enter":
 			if sel, ok := h.list.SelectedItem().(moduleItem); ok {
 				h.state.SelectedModule = sel.module

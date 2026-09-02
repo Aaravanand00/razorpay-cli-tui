@@ -256,6 +256,8 @@ func NewActionsScreen(s *state.SessionState, moduleID string, width, height int)
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.SetFilteringEnabled(true)
+	l.KeyMap.Quit.Unbind()
+	l.KeyMap.ForceQuit.Unbind()
 	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 
 	return ActionsScreen{
