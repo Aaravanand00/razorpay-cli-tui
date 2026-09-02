@@ -122,11 +122,13 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 		case "left":
 			if c.focusIndex == 0 {
 				c.activeMode = "test"
+				c.state.ClearToast()
 				return *c, nil
 			}
 		case "right":
 			if c.focusIndex == 0 {
 				c.activeMode = "live"
+				c.state.ClearToast()
 				return *c, nil
 			}
 		case " ", "m":
@@ -136,16 +138,19 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				} else {
 					c.activeMode = "test"
 				}
+				c.state.ClearToast()
 				return *c, nil
 			}
 		case "1", "t":
 			if c.focusIndex == 0 {
 				c.activeMode = "test"
+				c.state.ClearToast()
 				return *c, nil
 			}
 		case "2", "l":
 			if c.focusIndex == 0 {
 				c.activeMode = "live"
+				c.state.ClearToast()
 				return *c, nil
 			}
 		case "enter":
@@ -160,11 +165,22 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				return *c, cmd
 			}
 
-			// 2. Validate focused box or active mode box first
+			// 2. Strict Focus-First Validation
 			var validationErr string
 
-			// If user is currently in Live box or active mode is Live, check Live credentials first
-			if c.focusIndex == 3 || c.focusIndex == 4 || c.activeMode == "live" {
+			if c.focusIndex == 1 || c.focusIndex == 2 {
+				// User is explicitly inside Test Sandbox box
+				if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
+					validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+				} else if testKey != "" && testSec == "" {
+					validationErr = "Please enter the Test Key Secret for your Test Key ID"
+				} else if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
+					validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+				} else if liveKey != "" && liveSec == "" {
+					validationErr = "Please enter the Live Key Secret for your Live Key ID"
+				}
+			} else if c.focusIndex == 3 || c.focusIndex == 4 {
+				// User is explicitly inside Live Production box
 				if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
 					validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
 				} else if liveKey != "" && liveSec == "" {
@@ -175,15 +191,23 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 					validationErr = "Please enter the Test Key Secret for your Test Key ID"
 				}
 			} else {
-				// Otherwise check Test credentials first
-				if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
-					validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
-				} else if testKey != "" && testSec == "" {
-					validationErr = "Please enter the Test Key Secret for your Test Key ID"
-				} else if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
-					validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
-				} else if liveKey != "" && liveSec == "" {
-					validationErr = "Please enter the Live Key Secret for your Live Key ID"
+				// User is on Active Environment toggle
+				if c.activeMode == "live" {
+					if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
+						validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+					} else if liveKey != "" && liveSec == "" {
+						validationErr = "Please enter the Live Key Secret for your Live Key ID"
+					} else if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
+						validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+					}
+				} else {
+					if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
+						validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+					} else if testKey != "" && testSec == "" {
+						validationErr = "Please enter the Test Key Secret for your Test Key ID"
+					} else if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
+						validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+					}
 				}
 			}
 
@@ -234,6 +258,7 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 
 func (c *ConfigScreen) setFocus(idx int) {
 	c.focusIndex = idx
+	c.state.ClearToast() // Instantly clears previous box warning when switching fields
 	c.testKeyInput.Blur()
 	c.testSecInput.Blur()
 	c.liveKeyInput.Blur()
