@@ -1,6 +1,48 @@
-# Razorpay CLI
+# Razorpay CLI & Terminal UI (TUI)
 
-Command-line interface for the [Razorpay API](https://razorpay.com/docs/api/). Manage payments, orders, customers, invoices, refunds, settlements, disputes, payment links, QR codes, subscriptions, Route, and Smart Collect from your terminal.
+Command-line interface and interactive terminal user interface for the [Razorpay API](https://razorpay.com/docs/api/). Manage payments, orders, customers, invoices, refunds, settlements, disputes, payment links, QR codes, subscriptions, Route, and Smart Collect directly from your terminal.
+
+---
+
+## ⚡ Interactive Terminal UI (TUI)
+
+Launch a full-screen, keyboard-driven interactive Terminal User Interface built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) and [Lip Gloss](https://github.com/charmbracelet/lipgloss).
+
+```bash
+# Launch interactive TUI
+razorpay tui
+
+# Launch directly in specific environment mode
+razorpay tui --test       # Test Sandbox Mode
+razorpay tui --live       # Live Production Mode
+razorpay tui --read-only  # Safe Read-Only Mode (Locks all mutation operations)
+```
+
+### ✨ Key Capabilities & Features
+
+* **🧭 14-Module Navigation Hub:** Seamlessly navigate across all 14 Razorpay services (Orders, Payments, Refunds, Customers, Invoices, Payment Links, QR Codes, Subscriptions, Settlements, Disputes, Smart Collect, Route, Documents, Configuration) with real-time fuzzy search (`/`).
+* **📊 Live Interactive Data Tables:** Direct real-time REST API data fetching, dynamic resource-tailored columns, paise-to-Rupees currency conversion (`₹1,500.00`), relative timestamps, color-coded status pills (`● paid`, `● captured`, `▲ created`, `✖ failed`), and live refresh (`r`).
+* **🔍 Detail View & Syntax-Highlighted JSON Inspector:** Dual-mode tab switcher (`Tab` / `v`) between a structured 2-column Summary Grid and a syntax-highlighted Raw JSON Tree with smooth scroll navigation.
+* **📝 Dynamic Form Builder & API Executor:** Interactive forms for resource creation/updates with required field validators, automatic currency unit conversion, smart phone number normalization (auto `+91` prefix for 10 digits while preserving international codes), and real-time execution feedback.
+* **⚙️ Dual Profile Credential Manager:** Manage independent Test Sandbox (`rzp_test_...`) and Live Production (`rzp_live_...`) credentials with safety isolation, masked secret inputs, and 1-key instant environment toggle (`c`).
+* **🛡️ Safe Read-Only Mode:** Explore live account data with dynamic action-specific permission locks that prevent accidental charges or mutations.
+* **❓ Global Help & Cheat Sheet Modal:** Press `?` or `h` from anywhere in the TUI to open an instant keyboard shortcuts and environment guide.
+
+### ⌨️ Universal TUI Keybindings
+
+| Key | Action |
+| :--- | :--- |
+| `↑` / `↓` / `j` / `k` | Navigate lists, tables, and form fields |
+| `Enter` | Select module / Inspect table record / Submit form |
+| `Tab` / `Shift+Tab` | Switch tabs (Summary ⇄ JSON Tree) / Navigate form fields |
+| `r` | Refresh live table data / Reset form |
+| `c` | Open Credentials & Environment Configuration (Test ⇄ Live) |
+| `/` | Real-time fuzzy search across modules and actions |
+| `?` / `h` | Toggle Global Help & Keybindings reference modal |
+| `Esc` | Return to previous screen |
+| `q` / `Ctrl+C` | Quit Razorpay TUI |
+
+---
 
 ## Installation
 
