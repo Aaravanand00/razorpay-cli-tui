@@ -124,7 +124,7 @@ func (h *HomeScreen) ResetFilter() {
 func (h *HomeScreen) SetSize(width, height int) {
 	bodyHeight := height - 6
 	if h.state.Toast != nil && h.state.Toast.Message != "" {
-		bodyHeight -= 1
+		bodyHeight -= 3
 	}
 	if bodyHeight < 5 {
 		bodyHeight = 5
@@ -134,6 +134,7 @@ func (h *HomeScreen) SetSize(width, height int) {
 
 func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 	var cmd tea.Cmd
+	h.SetSize(h.state.Width, h.state.Height)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

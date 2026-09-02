@@ -145,6 +145,12 @@ var (
 				Background(ColorSuccess).
 				Padding(0, 2)
 
+	ToastWarningStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#000000")).
+				Background(ColorWarning).
+				Padding(0, 2)
+
 	ToastErrorStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FFFFFF")).

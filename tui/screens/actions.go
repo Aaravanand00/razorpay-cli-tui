@@ -284,7 +284,7 @@ func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
 		bodyHeight := height - 6
 		if a.state.Toast != nil && a.state.Toast.Message != "" {
-			bodyHeight -= 1
+			bodyHeight -= 3
 		}
 		if bodyHeight < 5 {
 			bodyHeight = 5
@@ -295,6 +295,7 @@ func (a *ActionsScreen) SetSize(width, height int) {
 
 func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 	var cmd tea.Cmd
+	a.SetSize(a.state.Width, a.state.Height)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
