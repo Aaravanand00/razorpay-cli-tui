@@ -25,9 +25,9 @@ func RenderHeader(s *state.SessionState, width int) string {
 		step2 = styles.StepActiveStyle.Render("● 2. ACTIONS")
 		step3 = styles.StepInactiveStyle.Render("○ 3. DATA/FORM")
 	case state.ScreenConfig:
-		step1 = styles.StepDoneStyle.Render("✓ 1. HOME")
-		step2 = styles.StepActiveStyle.Render("⚙ CONFIGURATION")
-		step3 = styles.StepInactiveStyle.Render("○")
+		step1 = styles.StepDoneStyle.Render("✓ 1. MODULES")
+		step2 = styles.StepActiveStyle.Render("● 2. CONFIGURATION")
+		step3 = styles.StepInactiveStyle.Render("○ 3. CREDENTIALS")
 	default:
 		step1 = styles.StepDoneStyle.Render("✓ 1. MODULES")
 		step2 = styles.StepDoneStyle.Render("✓ 2. ACTIONS")

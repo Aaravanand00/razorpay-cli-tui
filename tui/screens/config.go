@@ -125,15 +125,38 @@ func (c ConfigScreen) View() string {
 	var sections []string
 
 	// 1. Header
-	sections = append(sections, components.RenderHeader(c.state, c.width))
+	headerView := components.RenderHeader(c.state, c.width)
+	sections = append(sections, headerView)
 
 	// 2. Toast
-	toast := components.RenderToast(c.state)
-	if toast != "" {
-		sections = append(sections, toast)
+	toastView := components.RenderToast(c.state)
+	if toastView != "" {
+		sections = append(sections, toastView)
 	}
 
-	// 3. Form Body
+	// 3. Footer Keys
+	keys := []components.KeyHelp{
+		{Key: "Tab", Desc: "Switch Field"},
+		{Key: "Enter", Desc: "Save Credentials"},
+		{Key: "Esc", Desc: "Cancel / Back"},
+		{Key: "q", Desc: "Quit"},
+	}
+	footerView := components.RenderFooter(c.state, c.width, keys)
+
+	// Calculate Available Height to pin footer strictly to the bottom
+	headerHeight := lipgloss.Height(headerView)
+	footerHeight := lipgloss.Height(footerView)
+	toastHeight := 0
+	if toastView != "" {
+		toastHeight = lipgloss.Height(toastView)
+	}
+
+	bodyHeight := c.height - headerHeight - footerHeight - toastHeight
+	if bodyHeight < 8 {
+		bodyHeight = 8
+	}
+
+	// Form Body Elements
 	title := styles.TitleStyle.Render("⚙️  Configure Razorpay API Credentials")
 	desc := styles.SubtitleStyle.Render("Enter your Razorpay Key ID and Secret. Saved securely to ~/.razorpay/config.yaml")
 
@@ -150,17 +173,17 @@ func (c ConfigScreen) View() string {
 	hint := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Tip: Use 'rzp_test_...' for Test Mode or 'rzp_live_...' for Live Mode.")
 	formContent.WriteString(hint)
 
-	body := title + "\n" + desc + "\n" + box.Render(formContent.String())
-	sections = append(sections, body)
+	rawBody := title + "\n" + desc + "\n\n" + box.Render(formContent.String())
 
-	// 4. Footer
-	keys := []components.KeyHelp{
-		{Key: "Tab", Desc: "Switch Field"},
-		{Key: "Enter", Desc: "Save Credentials"},
-		{Key: "Esc", Desc: "Cancel / Back"},
-		{Key: "q", Desc: "Quit"},
-	}
-	sections = append(sections, components.RenderFooter(c.state, c.width, keys))
+	// Container that stretches body to full available height, pushing footer to bottom
+	bodyContainer := lipgloss.NewStyle().
+		Height(bodyHeight).
+		Width(c.width - 2)
+
+	sections = append(sections, bodyContainer.Render(rawBody))
+
+	// 4. Footer at bottom
+	sections = append(sections, footerView)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
