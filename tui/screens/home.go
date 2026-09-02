@@ -169,8 +169,7 @@ func (h HomeScreen) View() string {
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Select Module"},
 		{Key: "/", Desc: "Search"},
-		{Key: "m", Desc: "Test/Live"},
-		{Key: "c", Desc: "Config"},
+		{Key: "c", Desc: "Config (Test/Live)"},
 		{Key: "q", Desc: "Quit"},
 	}
 	sections = append(sections, components.RenderFooter(h.state, h.state.Width, keys))

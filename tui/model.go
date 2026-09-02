@@ -64,12 +64,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
 				return m, tea.Quit
 			}
-		case "m":
-			// Instant 1-Key Mode Switcher (Test ⇄ Live) on navigation screens
-			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
-				m.state.ToggleMode()
-				return m, nil
-			}
 		case "esc":
 			if m.state.CurrentScreen != state.ScreenHome {
 				m.state.PopScreen()

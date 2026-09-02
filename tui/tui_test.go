@@ -95,11 +95,8 @@ func TestDualProfileAndModeToggle(t *testing.T) {
 		t.Fatalf("expected test key active, got %s", m.state.KeyID)
 	}
 
-	// Press 'm' to toggle mode to Live
-	var model tea.Model = m
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-	m = model.(Model)
+	// Toggle mode to Live via state
+	m.state.ToggleMode()
 	if m.state.ActiveMode != "live" {
 		t.Fatalf("expected active mode 'live' after toggle, got %s", m.state.ActiveMode)
 	}
@@ -107,9 +104,8 @@ func TestDualProfileAndModeToggle(t *testing.T) {
 		t.Fatalf("expected live key active, got %s", m.state.KeyID)
 	}
 
-	// Press 'm' to toggle back to Test
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-	m = model.(Model)
+	// Toggle back to Test
+	m.state.ToggleMode()
 	if m.state.ActiveMode != "test" {
 		t.Fatalf("expected active mode 'test' after second toggle, got %s", m.state.ActiveMode)
 	}
