@@ -122,9 +122,9 @@ func (h *HomeScreen) ResetFilter() {
 }
 
 func (h *HomeScreen) SetSize(width, height int) {
-	bodyHeight := height - 7
+	bodyHeight := height - 9
 	if h.state.Toast != nil && h.state.Toast.Message != "" {
-		bodyHeight -= 3
+		bodyHeight -= 2
 	}
 	if bodyHeight < 5 {
 		bodyHeight = 5
@@ -146,6 +146,8 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 			break
 		}
 		switch msg.String() {
+		case "up", "down", "j", "k":
+			h.state.ClearToast()
 		case "esc":
 			// On Home Screen, Esc does nothing (prevents quitting). Only q or Ctrl+C quits.
 			return *h, nil

@@ -21,6 +21,5 @@ func RenderToast(s *state.SessionState) string {
 		content = styles.ToastSuccessStyle.Render("✔  " + s.Toast.Message)
 	}
 
-	// Clean vertical breathing margin around toast for maximum clarity
-	return "\n" + content + "\n"
+	return "\n" + content
 }

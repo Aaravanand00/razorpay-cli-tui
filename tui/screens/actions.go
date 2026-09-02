@@ -282,9 +282,9 @@ func (a *ActionsScreen) ResetFilter() {
 
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
-		bodyHeight := height - 7
+		bodyHeight := height - 9
 		if a.state.Toast != nil && a.state.Toast.Message != "" {
-			bodyHeight -= 3
+			bodyHeight -= 2
 		}
 		if bodyHeight < 5 {
 			bodyHeight = 5
@@ -307,6 +307,8 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 			break
 		}
 		switch msg.String() {
+		case "up", "down", "j", "k":
+			a.state.ClearToast()
 		case "enter":
 			if sel, ok := a.list.SelectedItem().(actionItem); ok {
 				a.state.SelectedAction = sel.action
