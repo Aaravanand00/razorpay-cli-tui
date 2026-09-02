@@ -156,6 +156,7 @@ func (tv *TableViewScreen) fetchDataCmd() tea.Cmd {
 
 func (tv *TableViewScreen) Update(msg tea.Msg) (TableViewScreen, tea.Cmd) {
 	var cmds []tea.Cmd
+	tv.SetSize(tv.state.Width, tv.state.Height)
 
 	switch msg := msg.(type) {
 	case TableDataLoadedMsg:
@@ -180,6 +181,8 @@ func (tv *TableViewScreen) Update(msg tea.Msg) (TableViewScreen, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "up", "down", "j", "k":
+			tv.state.ClearToast()
 		case "r":
 			tv.loading = true
 			tv.errMsg = ""
