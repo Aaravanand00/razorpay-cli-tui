@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -175,5 +176,50 @@ func TestTableViewInitializationAndColumns(t *testing.T) {
 	updatedView := tv.View()
 	if updatedView == "" {
 		t.Fatal("expected non-empty updated table view")
+	}
+}
+
+func TestDetailViewScreenTabsAndFormatting(t *testing.T) {
+	sess := state.NewSessionState()
+	sess.SelectedRowData = map[string]interface{}{
+		"id":         "order_DBJOWzybf0sJbb",
+		"entity":     "order",
+		"amount":     50000,
+		"currency":   "INR",
+		"status":     "paid",
+		"receipt":    "Receipt #101",
+		"created_at": 1672531199,
+		"notes": map[string]interface{}{
+			"customer_tier": "VIP",
+		},
+	}
+	sess.SelectedRawJSON = `{"id":"order_DBJOWzybf0sJbb","amount":50000,"status":"paid"}`
+
+	dv := screens.NewDetailViewScreen(sess, 100, 30)
+
+	// Test Summary Card View
+	summaryView := dv.View()
+	if summaryView == "" {
+		t.Fatal("expected non-empty detail summary view")
+	}
+	if !strings.Contains(summaryView, "order_DBJOWzybf0sJbb") {
+		t.Fatal("expected summary view to contain order ID")
+	}
+
+	// Switch Tab to Raw JSON Tree View
+	dv, _ = dv.Update(tea.KeyMsg{Type: tea.KeyTab})
+	jsonView := dv.View()
+	if jsonView == "" {
+		t.Fatal("expected non-empty JSON view")
+	}
+	if !strings.Contains(jsonView, "Raw JSON Tree") {
+		t.Fatal("expected JSON view to contain Raw JSON Tree active badge")
+	}
+
+	// Switch back to Summary
+	dv, _ = dv.Update(tea.KeyMsg{Type: tea.KeyTab})
+	summaryView2 := dv.View()
+	if !strings.Contains(summaryView2, "Summary Card") {
+		t.Fatal("expected back on summary card")
 	}
 }

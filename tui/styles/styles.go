@@ -199,4 +199,42 @@ var (
 				Bold(true).
 				Foreground(lipgloss.Color("#EF4444")).
 				Render("✖ failed")
+
+	// Detail & JSON Inspector Styles
+	TabActiveStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(ColorPrimary).
+			Padding(0, 2)
+
+	TabInactiveStyle = lipgloss.NewStyle().
+				Foreground(ColorTextMuted).
+				Background(ColorNavy).
+				Padding(0, 2)
+
+	DetailKeyStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(ColorSecondary).
+			Width(22)
+
+	DetailValStyle = lipgloss.NewStyle().
+			Foreground(ColorText)
+
+	JSONKeyStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#38BDF8"))
+
+	JSONStringStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#34D399"))
+
+	JSONNumberStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FBBF24"))
+
+	JSONBoolStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#F472B6"))
+
+	JSONNullStyle = lipgloss.NewStyle().
+			Italic(true).
+			Foreground(ColorTextDim)
 )

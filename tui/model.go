@@ -11,6 +11,7 @@ type Model struct {
 	home    screens.HomeScreen
 	actions screens.ActionsScreen
 	table   screens.TableViewScreen
+	detail  screens.DetailViewScreen
 	config  screens.ConfigScreen
 	ready   bool
 }
@@ -63,6 +64,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.actions.SetSize(msg.Width, msg.Height)
 		m.config.SetSize(msg.Width, msg.Height)
 		m.table.SetSize(msg.Width, msg.Height)
+		m.detail.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
@@ -71,7 +73,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":
-			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions || m.state.CurrentScreen == state.ScreenTable {
+			if m.state.CurrentScreen == state.ScreenHome ||
+				m.state.CurrentScreen == state.ScreenActions ||
+				m.state.CurrentScreen == state.ScreenTable ||
+				m.state.CurrentScreen == state.ScreenDetail {
 				return m, tea.Quit
 			}
 		case "esc":
@@ -121,7 +126,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case state.ScreenTable:
 		var cmd tea.Cmd
+		prevScreen := m.state.CurrentScreen
 		m.table, cmd = m.table.Update(msg)
+		cmds = append(cmds, cmd)
+
+		if m.state.CurrentScreen == state.ScreenDetail && prevScreen == state.ScreenTable {
+			m.detail = screens.NewDetailViewScreen(m.state, m.state.Width, m.state.Height)
+		}
+
+	case state.ScreenDetail:
+		var cmd tea.Cmd
+		m.detail, cmd = m.detail.Update(msg)
 		cmds = append(cmds, cmd)
 
 	case state.ScreenConfig:
@@ -150,6 +165,8 @@ func (m Model) View() string {
 		return m.actions.View()
 	case state.ScreenTable:
 		return m.table.View()
+	case state.ScreenDetail:
+		return m.detail.View()
 	case state.ScreenConfig:
 		return m.config.View()
 	default:
