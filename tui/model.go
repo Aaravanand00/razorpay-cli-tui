@@ -69,7 +69,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case "esc":
-			if m.state.CurrentScreen != state.ScreenHome {
+			if m.state.CurrentScreen == state.ScreenHome {
+				if m.home.IsFiltering() {
+					m.home.ResetFilter()
+					return m, nil
+				}
+			} else if m.state.CurrentScreen == state.ScreenActions {
+				if m.actions.IsFiltering() {
+					m.actions.ResetFilter()
+					return m, nil
+				}
+				m.state.PopScreen()
+				return m, nil
+			} else {
 				m.state.PopScreen()
 				return m, nil
 			}

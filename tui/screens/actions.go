@@ -270,6 +270,14 @@ func (a *ActionsScreen) IsInitialized() bool {
 	return a.initialized
 }
 
+func (a *ActionsScreen) IsFiltering() bool {
+	return a.list.FilterState() == list.Filtering
+}
+
+func (a *ActionsScreen) ResetFilter() {
+	a.list.ResetFilter()
+}
+
 func (a *ActionsScreen) SetSize(width, height int) {
 	if a.initialized {
 		bodyHeight := height - 6
@@ -289,6 +297,10 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if a.list.FilterState() == list.Filtering {
+			if msg.String() == "esc" || (msg.String() == "/" && a.list.FilterValue() == "") {
+				a.list.ResetFilter()
+				return *a, nil
+			}
 			break
 		}
 		switch msg.String() {
@@ -323,13 +335,22 @@ func (a ActionsScreen) View() string {
 	// 3. Spacious Actions List
 	sections = append(sections, a.list.View())
 
-	// 4. Footer
-	keys := []components.KeyHelp{
-		{Key: "↑/↓", Desc: "Navigate"},
-		{Key: "Enter", Desc: "Open Action"},
-		{Key: "/", Desc: "Search"},
-		{Key: "Esc", Desc: "Back"},
-		{Key: "q", Desc: "Quit"},
+	// 4. Contextual Footer
+	var keys []components.KeyHelp
+	if a.list.FilterState() == list.Filtering {
+		keys = []components.KeyHelp{
+			{Key: "Type", Desc: "Fuzzy Filter"},
+			{Key: "Enter", Desc: "Apply"},
+			{Key: "Esc / /", Desc: "Close Search"},
+		}
+	} else {
+		keys = []components.KeyHelp{
+			{Key: "↑/↓", Desc: "Navigate"},
+			{Key: "Enter", Desc: "Open Action"},
+			{Key: "/", Desc: "Search"},
+			{Key: "Esc", Desc: "Back"},
+			{Key: "q", Desc: "Quit"},
+		}
 	}
 	sections = append(sections, components.RenderFooter(a.state, a.state.Width, keys))
 

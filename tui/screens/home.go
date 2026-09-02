@@ -111,6 +111,14 @@ func NewHomeScreen(s *state.SessionState, width, height int) HomeScreen {
 	}
 }
 
+func (h *HomeScreen) IsFiltering() bool {
+	return h.list.FilterState() == list.Filtering
+}
+
+func (h *HomeScreen) ResetFilter() {
+	h.list.ResetFilter()
+}
+
 func (h *HomeScreen) SetSize(width, height int) {
 	bodyHeight := height - 6
 	if h.state.Toast != nil && h.state.Toast.Message != "" {
@@ -128,6 +136,10 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if h.list.FilterState() == list.Filtering {
+			if msg.String() == "esc" || (msg.String() == "/" && h.list.FilterValue() == "") {
+				h.list.ResetFilter()
+				return *h, nil
+			}
 			break
 		}
 		switch msg.String() {
@@ -164,13 +176,22 @@ func (h HomeScreen) View() string {
 	// 3. Spacious Module List
 	sections = append(sections, h.list.View())
 
-	// 4. Footer
-	keys := []components.KeyHelp{
-		{Key: "↑/↓", Desc: "Navigate"},
-		{Key: "Enter", Desc: "Select Module"},
-		{Key: "/", Desc: "Search"},
-		{Key: "c", Desc: "Config (Test/Live)"},
-		{Key: "q", Desc: "Quit"},
+	// 4. Contextual Footer
+	var keys []components.KeyHelp
+	if h.list.FilterState() == list.Filtering {
+		keys = []components.KeyHelp{
+			{Key: "Type", Desc: "Fuzzy Filter"},
+			{Key: "Enter", Desc: "Apply"},
+			{Key: "Esc / /", Desc: "Close Search"},
+		}
+	} else {
+		keys = []components.KeyHelp{
+			{Key: "↑/↓", Desc: "Navigate"},
+			{Key: "Enter", Desc: "Select Module"},
+			{Key: "/", Desc: "Search"},
+			{Key: "c", Desc: "Config (Test/Live)"},
+			{Key: "q", Desc: "Quit"},
+		}
 	}
 	sections = append(sections, components.RenderFooter(h.state, h.state.Width, keys))
 
