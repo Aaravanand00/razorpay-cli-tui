@@ -290,9 +290,9 @@ func (c ConfigScreen) View() string {
 	// 3. Footer Keys
 	keys := []components.KeyHelp{
 		{Key: "Tab / Shift+Tab", Desc: "Switch Field"},
-		{Key: "↑ / ↓", Desc: "Navigate"},
 		{Key: "← / →", Desc: "Select Mode"},
 		{Key: "Enter", Desc: "Save All"},
+		{Key: "?/h", Desc: "Help"},
 		{Key: "Esc", Desc: "Back"},
 		{Key: "Ctrl+C", Desc: "Quit"},
 	}

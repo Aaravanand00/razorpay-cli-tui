@@ -276,4 +276,18 @@ func TestHelpScreenAndGlobalToggle(t *testing.T) {
 	if m.state.CurrentScreen != state.ScreenHome {
 		t.Fatalf("expected return to ScreenHome after '?' toggle, got %v", m.state.CurrentScreen)
 	}
+
+	// Test 'h' key opens Help screen
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenHelp {
+		t.Fatalf("expected ScreenHelp after pressing 'h', got %v", m.state.CurrentScreen)
+	}
+
+	// Press 'h' again to close
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenHome {
+		t.Fatalf("expected return to ScreenHome after 'h' toggle, got %v", m.state.CurrentScreen)
+	}
 }

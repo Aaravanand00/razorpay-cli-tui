@@ -539,6 +539,7 @@ func (tv TableViewScreen) View() string {
 		{Key: "Enter", Desc: "Inspect Record"},
 		{Key: "r", Desc: "Refresh"},
 		{Key: "c", Desc: "Config"},
+		{Key: "?/h", Desc: "Help"},
 		{Key: "Esc", Desc: "Back"},
 		{Key: "q", Desc: "Quit"},
 	}

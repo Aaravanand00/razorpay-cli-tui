@@ -43,12 +43,12 @@ func NewDetailViewScreen(s *state.SessionState, width, height int) DetailViewScr
 }
 
 func calculateDetailViewportHeight(screenHeight int, hasToast bool) int {
-	h := screenHeight - 13
+	h := screenHeight - 16
 	if hasToast {
 		h -= 2
 	}
-	if h < 6 {
-		h = 6
+	if h < 5 {
+		h = 5
 	}
 	return h
 }
@@ -120,6 +120,7 @@ func (dv DetailViewScreen) View() string {
 		{Key: "Tab / v", Desc: "Switch Mode"},
 		{Key: "↑/↓", Desc: "Scroll JSON"},
 		{Key: "c", Desc: "Config"},
+		{Key: "?/h", Desc: "Help"},
 		{Key: "Esc", Desc: "Back to Table"},
 		{Key: "q", Desc: "Quit"},
 	}
@@ -157,7 +158,7 @@ func (dv DetailViewScreen) View() string {
 		vpContainer := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ColorBorder).
-			Padding(1, 2).
+			Padding(0, 1).
 			Width(dv.width - 6).
 			Render(dv.viewport.View())
 

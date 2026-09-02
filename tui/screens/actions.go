@@ -358,6 +358,7 @@ func (a ActionsScreen) View() string {
 			{Key: "↑/↓", Desc: "Navigate"},
 			{Key: "Enter", Desc: "Open Action"},
 			{Key: "/", Desc: "Search"},
+			{Key: "?/h", Desc: "Help"},
 			{Key: "Esc", Desc: "Back"},
 			{Key: "q", Desc: "Quit"},
 		}

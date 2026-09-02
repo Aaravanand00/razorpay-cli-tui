@@ -196,7 +196,8 @@ func (h HomeScreen) View() string {
 			{Key: "↑/↓", Desc: "Navigate"},
 			{Key: "Enter", Desc: "Select Module"},
 			{Key: "/", Desc: "Search"},
-			{Key: "c", Desc: "Config (Test/Live)"},
+			{Key: "c", Desc: "Config"},
+			{Key: "?/h", Desc: "Help"},
 			{Key: "q", Desc: "Quit"},
 		}
 	}

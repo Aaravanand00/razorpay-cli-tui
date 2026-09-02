@@ -74,12 +74,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		// Global Help Toggle ('?' key)
-		if msg.String() == "?" {
+		// Global Help Toggle ('?' or 'h' key)
+		if msg.String() == "?" || msg.String() == "h" {
 			if m.state.CurrentScreen == state.ScreenHelp {
 				m.state.PopScreen()
 				return m, nil
-			} else if m.state.CurrentScreen != state.ScreenForm && !m.home.IsFiltering() && !m.actions.IsFiltering() {
+			} else if m.state.CurrentScreen != state.ScreenForm &&
+				m.state.CurrentScreen != state.ScreenConfig &&
+				!m.home.IsFiltering() &&
+				!m.actions.IsFiltering() {
 				m.state.PushScreen(state.ScreenHelp, "❓ Help")
 				m.help = screens.NewHelpScreen(m.state, m.state.Width, m.state.Height)
 				return m, nil
