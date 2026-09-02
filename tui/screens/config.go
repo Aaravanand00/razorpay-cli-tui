@@ -320,7 +320,7 @@ func (c ConfigScreen) View() string {
 	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Use 'Tab' or '← / →' arrows to jump between Test and Live boxes. Enter your keys once and press Enter to save!")
 
 	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
-	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Enter your keys once — switch anytime in 1 sec!")
+	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
 
 	rawBody := title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
 
