@@ -134,12 +134,12 @@ func (c ConfigScreen) View() string {
 		sections = append(sections, toastView)
 	}
 
-	// 3. Footer Keys
+	// 3. Footer Keys (Using Ctrl+C for Quit because q is a typeable character in inputs)
 	keys := []components.KeyHelp{
 		{Key: "Tab", Desc: "Switch Field"},
 		{Key: "Enter", Desc: "Save Credentials"},
 		{Key: "Esc", Desc: "Cancel / Back"},
-		{Key: "q", Desc: "Quit"},
+		{Key: "Ctrl+C", Desc: "Quit"},
 	}
 	footerView := components.RenderFooter(c.state, c.width, keys)
 
