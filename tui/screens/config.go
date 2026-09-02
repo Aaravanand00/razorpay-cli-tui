@@ -13,53 +13,53 @@ import (
 )
 
 type ConfigScreen struct {
-	state          *state.SessionState
-	activeMode     string // "test" or "live"
-	testKeyInput   textinput.Model
-	testSecInput   textinput.Model
-	liveKeyInput   textinput.Model
-	liveSecInput   textinput.Model
-	focusIndex     int // 0: mode switch, 1: test key, 2: test secret, 3: live key, 4: live secret
-	width          int
-	height         int
+	state        *state.SessionState
+	activeMode   string // "test" or "live"
+	testKeyInput textinput.Model
+	testSecInput textinput.Model
+	liveKeyInput textinput.Model
+	liveSecInput textinput.Model
+	focusIndex   int // 0: mode switch, 1: test key, 2: test secret, 3: live key, 4: live secret
+	width        int
+	height       int
 }
 
 func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	tki := textinput.New()
 	tki.Placeholder = "rzp_test_..."
 	tki.SetValue(s.TestKeyID)
-	tki.Prompt = " Test Key ID:     "
+	tki.Prompt = " Key ID:     "
 	tki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
 	tki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	tki.Width = 48
+	tki.Width = 38
 
 	tsi := textinput.New()
 	tsi.Placeholder = "Test Key Secret"
 	tsi.SetValue(s.TestKeySecret)
 	tsi.EchoMode = textinput.EchoPassword
 	tsi.EchoCharacter = '•'
-	tsi.Prompt = " Test Key Secret: "
+	tsi.Prompt = " Key Secret: "
 	tsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
 	tsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	tsi.Width = 48
+	tsi.Width = 38
 
 	lki := textinput.New()
 	lki.Placeholder = "rzp_live_..."
 	lki.SetValue(s.LiveKeyID)
-	lki.Prompt = " Live Key ID:     "
+	lki.Prompt = " Key ID:     "
 	lki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
 	lki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	lki.Width = 48
+	lki.Width = 38
 
 	lsi := textinput.New()
 	lsi.Placeholder = "Live Key Secret"
 	lsi.SetValue(s.LiveKeySecret)
 	lsi.EchoMode = textinput.EchoPassword
 	lsi.EchoCharacter = '•'
-	lsi.Prompt = " Live Key Secret: "
+	lsi.Prompt = " Key Secret: "
 	lsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
 	lsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	lsi.Width = 48
+	lsi.Width = 38
 
 	// Default focus on test key
 	tki.Focus()
@@ -88,10 +88,56 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab", "down":
+		case "tab":
 			c.setFocus((c.focusIndex + 1) % 5)
-		case "shift+tab", "up":
+			return *c, nil
+		case "shift+tab":
 			c.setFocus((c.focusIndex - 1 + 5) % 5)
+			return *c, nil
+		case "down":
+			if c.focusIndex == 0 {
+				c.setFocus(1)
+			} else if c.focusIndex == 1 {
+				c.setFocus(2)
+			} else if c.focusIndex == 2 {
+				c.setFocus(0)
+			} else if c.focusIndex == 3 {
+				c.setFocus(4)
+			} else if c.focusIndex == 4 {
+				c.setFocus(0)
+			}
+			return *c, nil
+		case "up":
+			if c.focusIndex == 0 {
+				c.setFocus(2)
+			} else if c.focusIndex == 1 {
+				c.setFocus(0)
+			} else if c.focusIndex == 2 {
+				c.setFocus(1)
+			} else if c.focusIndex == 3 {
+				c.setFocus(0)
+			} else if c.focusIndex == 4 {
+				c.setFocus(3)
+			}
+			return *c, nil
+		case "right":
+			// Jump from Test Box -> Live Box
+			if c.focusIndex == 1 {
+				c.setFocus(3)
+				return *c, nil
+			} else if c.focusIndex == 2 {
+				c.setFocus(4)
+				return *c, nil
+			}
+		case "left":
+			// Jump from Live Box -> Test Box
+			if c.focusIndex == 3 {
+				c.setFocus(1)
+				return *c, nil
+			} else if c.focusIndex == 4 {
+				c.setFocus(2)
+				return *c, nil
+			}
 		case " ", "m":
 			if c.focusIndex == 0 {
 				if c.activeMode == "test" {
@@ -99,6 +145,7 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				} else {
 					c.activeMode = "test"
 				}
+				return *c, nil
 			}
 		case "enter":
 			testKey := strings.TrimSpace(c.testKeyInput.Value())
@@ -179,7 +226,8 @@ func (c ConfigScreen) View() string {
 
 	// 3. Footer Keys
 	keys := []components.KeyHelp{
-		{Key: "Tab / ↑↓", Desc: "Switch Field"},
+		{Key: "Tab / Shift+Tab", Desc: "Next/Prev Field"},
+		{Key: "← / →", Desc: "Switch Box"},
 		{Key: "Space", Desc: "Toggle Mode"},
 		{Key: "Enter", Desc: "Save All"},
 		{Key: "Esc", Desc: "Back"},
@@ -216,38 +264,63 @@ func (c ConfigScreen) View() string {
 		modeSwitch = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ColorBorderFocus).
+			Background(styles.ColorNavy).
 			Padding(0, 1).
-			Render("▶ " + modeSwitch + "  (Press Space to toggle)")
+			Render("▶ " + modeSwitch + "  [Press Space to Toggle Active Mode]")
+	} else {
+		modeSwitch = lipgloss.NewStyle().
+			Padding(0, 1).
+			Render("  " + modeSwitch)
 	}
 
-	// Test Box
+	// Dynamic Box Widths
+	boxWidth := (c.width - 8) / 2
+	if boxWidth < 42 {
+		boxWidth = 42
+	}
+
+	// Test Box Styling (Highlight when focused)
+	testBorderColor := styles.ColorBorder
+	testHeaderBadge := styles.BadgeTestStyle.Render("▲ TEST SANDBOX")
+	if c.focusIndex == 1 || c.focusIndex == 2 {
+		testBorderColor = styles.ColorWarning
+		testHeaderBadge = styles.BadgeTestStyle.Render("▶ ▲ TEST SANDBOX (ACTIVE INPUT)")
+	}
+
 	testBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorWarning).
-		Padding(0, 2).
-		Width((c.width - 8) / 2)
+		BorderForeground(testBorderColor).
+		Padding(1, 2).
+		Width(boxWidth)
 
-	testContent := styles.BadgeTestStyle.Render("▲ TEST SANDBOX CREDENTIALS") + "\n\n" +
-		c.testKeyInput.View() + "\n" +
+	testContent := testHeaderBadge + "\n\n" +
+		c.testKeyInput.View() + "\n\n" +
 		c.testSecInput.View()
 
-	// Live Box
+	// Live Box Styling (Highlight when focused)
+	liveBorderColor := styles.ColorBorder
+	liveHeaderBadge := styles.BadgeLiveStyle.Render("● LIVE PRODUCTION")
+	if c.focusIndex == 3 || c.focusIndex == 4 {
+		liveBorderColor = styles.ColorSuccess
+		liveHeaderBadge = styles.BadgeLiveStyle.Render("▶ ● LIVE PRODUCTION (ACTIVE INPUT)")
+	}
+
 	liveBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorSuccess).
-		Padding(0, 2).
-		Width((c.width - 8) / 2)
+		BorderForeground(liveBorderColor).
+		Padding(1, 2).
+		Width(boxWidth)
 
-	liveContent := styles.BadgeLiveStyle.Render("● LIVE PRODUCTION CREDENTIALS") + "\n\n" +
-		c.liveKeyInput.View() + "\n" +
+	liveContent := liveHeaderBadge + "\n\n" +
+		c.liveKeyInput.View() + "\n\n" +
 		c.liveSecInput.View()
 
 	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "  ", liveBoxStyle.Render(liveContent))
 
-	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Tip: Enter both keys once. You can switch Test ⇄ Live instantly anytime by pressing 'm'!")
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Use 'Tab' or '← / →' arrows to jump between Test and Live boxes. Enter your keys once and press Enter to save!")
 
 	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
-	desc := styles.SubtitleStyle.Render("Manage your Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
+	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Enter your keys once — switch anytime in 1 sec!")
 
 	rawBody := title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
 
