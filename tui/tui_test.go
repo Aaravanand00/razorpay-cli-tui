@@ -251,3 +251,29 @@ func TestFormViewScreenFieldGenerationAndNavigation(t *testing.T) {
 		t.Fatal("expected non-empty view after tab")
 	}
 }
+
+func TestHelpScreenAndGlobalToggle(t *testing.T) {
+	var model tea.Model = NewModel()
+	model, _ = model.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Press '?' to open Help screen
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+
+	m := model.(Model)
+	if m.state.CurrentScreen != state.ScreenHelp {
+		t.Fatalf("expected ScreenHelp, got %v", m.state.CurrentScreen)
+	}
+
+	helpView := m.View()
+	if !strings.Contains(helpView, "Keyboard Shortcuts & Navigation Guide") {
+		t.Fatal("expected help view title")
+	}
+
+	// Press '?' again to close Help screen
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+
+	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenHome {
+		t.Fatalf("expected return to ScreenHome after '?' toggle, got %v", m.state.CurrentScreen)
+	}
+}

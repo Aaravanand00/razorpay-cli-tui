@@ -14,6 +14,7 @@ type Model struct {
 	detail  screens.DetailViewScreen
 	form    screens.FormViewScreen
 	config  screens.ConfigScreen
+	help    screens.HelpScreen
 	ready   bool
 }
 
@@ -42,6 +43,7 @@ func NewModelWithOptions(readOnly bool, initialMode string) Model {
 		state:  sess,
 		home:   screens.NewHomeScreen(sess, 80, 24),
 		config: screens.NewConfigScreen(sess, 80, 24),
+		help:   screens.NewHelpScreen(sess, 80, 24),
 		ready:  false,
 	}
 }
@@ -67,10 +69,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table.SetSize(msg.Width, msg.Height)
 		m.detail.SetSize(msg.Width, msg.Height)
 		m.form.SetSize(msg.Width, msg.Height)
+		m.help.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
 	case tea.KeyMsg:
+		// Global Help Toggle ('?' key)
+		if msg.String() == "?" {
+			if m.state.CurrentScreen == state.ScreenHelp {
+				m.state.PopScreen()
+				return m, nil
+			} else if m.state.CurrentScreen != state.ScreenForm && !m.home.IsFiltering() && !m.actions.IsFiltering() {
+				m.state.PushScreen(state.ScreenHelp, "❓ Help")
+				m.help = screens.NewHelpScreen(m.state, m.state.Width, m.state.Height)
+				return m, nil
+			}
+		}
+
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
@@ -163,6 +178,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if prevScreen == state.ScreenConfig && m.state.CurrentScreen == state.ScreenTable {
 			cmds = append(cmds, m.table.Init())
 		}
+
+	case state.ScreenHelp:
+		var cmd tea.Cmd
+		m.help, cmd = m.help.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
@@ -186,6 +206,8 @@ func (m Model) View() string {
 		return m.form.View()
 	case state.ScreenConfig:
 		return m.config.View()
+	case state.ScreenHelp:
+		return m.help.View()
 	default:
 		return m.home.View()
 	}
