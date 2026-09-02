@@ -521,19 +521,43 @@ func (tv TableViewScreen) View() string {
 	var sections []string
 
 	// 1. Header
-	sections = append(sections, components.RenderHeader(tv.state, tv.width))
+	headerView := components.RenderHeader(tv.state, tv.width)
+	sections = append(sections, headerView)
 
 	// 2. Toast
-	toast := components.RenderToast(tv.state)
-	if toast != "" {
-		sections = append(sections, toast)
+	toastView := components.RenderToast(tv.state)
+	if toastView != "" {
+		sections = append(sections, toastView)
 	}
 
-	// 3. Screen Title & Meta
-	title := styles.TitleStyle.PaddingLeft(1).Render(fmt.Sprintf("%s (%s)", tv.action.Title, tv.action.CLICommand))
-	sections = append(sections, "\n"+title)
+	// 3. Footer Keys
+	keys := []components.KeyHelp{
+		{Key: "↑/↓", Desc: "Navigate"},
+		{Key: "Enter", Desc: "Inspect Record"},
+		{Key: "r", Desc: "Refresh"},
+		{Key: "c", Desc: "Config"},
+		{Key: "Esc", Desc: "Back"},
+		{Key: "q", Desc: "Quit"},
+	}
+	footerView := components.RenderFooter(tv.state, tv.width, keys)
+
+	// Dynamic Available Height calculation to pin footer strictly to bottom
+	headerHeight := lipgloss.Height(headerView)
+	footerHeight := lipgloss.Height(footerView)
+	toastHeight := 0
+	if toastView != "" {
+		toastHeight = lipgloss.Height(toastView)
+	}
+
+	bodyHeight := tv.height - headerHeight - footerHeight - toastHeight
+	if bodyHeight < 10 {
+		bodyHeight = 10
+	}
 
 	// 4. Main Body Content
+	var bodyContent string
+	title := styles.TitleStyle.PaddingLeft(1).Render(fmt.Sprintf("%s (%s)", tv.action.Title, tv.action.CLICommand))
+
 	if !tv.state.HasCredentials() {
 		modeName := "Test Sandbox"
 		if tv.state.IsLiveMode {
@@ -552,12 +576,12 @@ func (tv TableViewScreen) View() string {
 					"👉 Press [Esc] to go back to Actions",
 				modeName, tv.action.Title,
 			))
-		sections = append(sections, "\n"+authCard)
+		bodyContent = "\n" + title + "\n\n" + authCard
 	} else if tv.loading {
 		loadingMsg := lipgloss.NewStyle().
 			Padding(4, 2).
 			Render(fmt.Sprintf("%s Fetching live records from Razorpay API (%s)...", tv.spinner.View(), tv.action.APIPath))
-		sections = append(sections, loadingMsg)
+		bodyContent = "\n" + title + "\n\n" + loadingMsg
 	} else if tv.errMsg != "" {
 		errCard := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -565,7 +589,7 @@ func (tv TableViewScreen) View() string {
 			Padding(1, 2).
 			Width(tv.width - 6).
 			Render(fmt.Sprintf("⚠️  API Request Failed:\n%s\n\n💡 Tip: Press 'r' to Retry or 'c' to Configure Credentials.", tv.errMsg))
-		sections = append(sections, "\n"+errCard)
+		bodyContent = "\n" + title + "\n\n" + errCard
 	} else if len(tv.rawDataList) == 0 {
 		emptyCard := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -573,9 +597,8 @@ func (tv TableViewScreen) View() string {
 			Padding(2, 3).
 			Width(tv.width - 6).
 			Render("📭 No records found for this resource in your active environment.\n\n💡 Tip: Press 'r' to refresh or 'Esc' to go back.")
-		sections = append(sections, "\n"+emptyCard)
+		bodyContent = "\n" + title + "\n\n" + emptyCard
 	} else {
-		// Table container with summary
 		countBar := lipgloss.NewStyle().
 			Foreground(styles.ColorTextMuted).
 			PaddingLeft(1).
@@ -585,19 +608,15 @@ func (tv TableViewScreen) View() string {
 			Width(tv.width - 4).
 			Render(tv.table.View())
 
-		sections = append(sections, "\n"+countBar+"\n"+tableView)
+		bodyContent = "\n" + title + "\n" + countBar + "\n" + tableView
 	}
 
-	// 5. Contextual Footer
-	keys := []components.KeyHelp{
-		{Key: "↑/↓", Desc: "Navigate"},
-		{Key: "Enter", Desc: "Inspect Record"},
-		{Key: "r", Desc: "Refresh"},
-		{Key: "c", Desc: "Config"},
-		{Key: "Esc", Desc: "Back"},
-		{Key: "q", Desc: "Quit"},
-	}
-	sections = append(sections, "\n"+components.RenderFooter(tv.state, tv.width, keys))
+	bodyContainer := lipgloss.NewStyle().
+		Height(bodyHeight).
+		Width(tv.width - 2)
+
+	sections = append(sections, bodyContainer.Render(bodyContent))
+	sections = append(sections, footerView)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }

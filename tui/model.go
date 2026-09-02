@@ -71,7 +71,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":
-			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions {
+			if m.state.CurrentScreen == state.ScreenHome || m.state.CurrentScreen == state.ScreenActions || m.state.CurrentScreen == state.ScreenTable {
 				return m, tea.Quit
 			}
 		case "esc":
