@@ -34,7 +34,7 @@ func RenderHeader(s *state.SessionState, width int) string {
 		step3 = styles.StepActiveStyle.Render("● 3. ACTIVE VIEW")
 	}
 
-	stepper := lipgloss.JoinHorizontal(lipgloss.Center, " ", step1, arrow, step2, arrow, step3)
+	stepper := lipgloss.JoinHorizontal(lipgloss.Center, step1, " ", arrow, " ", step2, " ", arrow, " ", step3)
 
 	// Auth, Mode & Read-Only Badge
 	var badge string
@@ -60,7 +60,7 @@ func RenderHeader(s *state.SessionState, width int) string {
 		badge = styles.BadgeTestStyle.Render("▲ TEST MODE: " + s.MaskedKey())
 	}
 
-	leftTop := lipgloss.JoinHorizontal(lipgloss.Center, logo, stepper)
+	leftTop := lipgloss.JoinHorizontal(lipgloss.Center, logo, "    ", stepper)
 	gapTop := width - lipgloss.Width(leftTop) - lipgloss.Width(badge) - 4
 	if gapTop < 2 {
 		gapTop = 2

@@ -28,8 +28,8 @@ var (
 	// Brand & Logo
 	BrandStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(ColorPrimary).
+			Foreground(ColorSecondary).
+			Background(ColorNavy).
 			Padding(0, 1)
 
 	TitleStyle = lipgloss.NewStyle().
