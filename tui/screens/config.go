@@ -279,11 +279,11 @@ func (c *ConfigScreen) setFocus(idx int) {
 func (c ConfigScreen) View() string {
 	var sections []string
 
-	// 1. Header
+	// 1. Top Header
 	headerView := components.RenderHeader(c.state, c.width)
 	sections = append(sections, headerView)
 
-	// 2. Toast (Auto-clears after 5s)
+	// 2. Toast Alert (Auto-clears after 5s)
 	toastView := components.RenderToast(c.state)
 	if toastView != "" {
 		sections = append(sections, toastView)
@@ -309,11 +309,11 @@ func (c ConfigScreen) View() string {
 	}
 
 	bodyHeight := c.height - headerHeight - footerHeight - toastHeight
-	if bodyHeight < 12 {
-		bodyHeight = 12
+	if bodyHeight < 14 {
+		bodyHeight = 14
 	}
 
-	// Active Mode Switcher Row with Clean Arrow Controls
+	// Active Mode Switcher Row with Spacious Padding
 	var testPill, livePill string
 	if c.activeMode == "test" {
 		testPill = styles.BadgeTestStyle.Render("● 1. TEST SANDBOX (ACTIVE)")
@@ -323,33 +323,36 @@ func (c ConfigScreen) View() string {
 		livePill = styles.BadgeLiveStyle.Render("● 2. LIVE PRODUCTION (ACTIVE)")
 	}
 
-	modeSwitch := lipgloss.JoinHorizontal(lipgloss.Center,
+	modeSwitchContent := lipgloss.JoinHorizontal(lipgloss.Center,
 		"  Active Environment:  ",
 		testPill,
-		"    ",
+		"     ",
 		livePill,
 	)
 
+	var modeSwitch string
 	if c.focusIndex == 0 {
 		modeSwitch = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ColorBorderFocus).
 			Background(styles.ColorCardBg).
-			Padding(0, 1).
-			Render("▶ " + modeSwitch + "   [Use ← / → Arrows or 1/2 to Switch]")
+			Padding(1, 2).
+			Render("▶ " + modeSwitchContent + "    [Use ← / → Arrows or 1/2 to Switch]")
 	} else {
 		modeSwitch = lipgloss.NewStyle().
-			Padding(0, 1).
-			Render("  " + modeSwitch)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(styles.ColorBorder).
+			Padding(1, 2).
+			Render("  " + modeSwitchContent)
 	}
 
 	// Dynamic Box Widths
-	boxWidth := (c.width - 10) / 2
-	if boxWidth < 40 {
-		boxWidth = 40
+	boxWidth := (c.width - 12) / 2
+	if boxWidth < 42 {
+		boxWidth = 42
 	}
 
-	// Test Box Styling
+	// Test Box Styling (Spacious with 1, 3 padding)
 	testBorderColor := styles.ColorBorder
 	testHeaderBadge := styles.BadgeTestStyle.Render("▲ TEST SANDBOX")
 	if c.focusIndex == 1 || c.focusIndex == 2 {
@@ -360,14 +363,14 @@ func (c ConfigScreen) View() string {
 	testBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(testBorderColor).
-		Padding(1, 2).
+		Padding(1, 3).
 		Width(boxWidth)
 
 	testContent := testHeaderBadge + "\n\n" +
 		c.testKeyInput.View() + "\n\n" +
 		c.testSecInput.View()
 
-	// Live Box Styling
+	// Live Box Styling (Spacious with 1, 3 padding)
 	liveBorderColor := styles.ColorBorder
 	liveHeaderBadge := styles.BadgeLiveStyle.Render("● LIVE PRODUCTION")
 	if c.focusIndex == 3 || c.focusIndex == 4 {
@@ -378,21 +381,21 @@ func (c ConfigScreen) View() string {
 	liveBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(liveBorderColor).
-		Padding(1, 2).
+		Padding(1, 3).
 		Width(boxWidth)
 
 	liveContent := liveHeaderBadge + "\n\n" +
 		c.liveKeyInput.View() + "\n\n" +
 		c.liveSecInput.View()
 
-	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "   ", liveBoxStyle.Render(liveContent))
+	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "    ", liveBoxStyle.Render(liveContent))
 
-	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Format: Test Key starts with 'rzp_test_...', Live Key starts with 'rzp_live_...'. Press 'Tab' to move.")
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).PaddingLeft(1).Render("💡 Format: Test Key starts with 'rzp_test_...', Live Key with 'rzp_live_...'. Press 'Tab' to move.")
 
-	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
-	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
+	title := styles.TitleStyle.PaddingLeft(1).Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
+	desc := styles.SubtitleStyle.PaddingLeft(1).Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
 
-	rawBody := title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
+	rawBody := "\n" + title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
 
 	bodyContainer := lipgloss.NewStyle().
 		Height(bodyHeight).
