@@ -339,9 +339,8 @@ func (a ActionsScreen) View() string {
 	var keys []components.KeyHelp
 	if a.list.FilterState() == list.Filtering {
 		keys = []components.KeyHelp{
-			{Key: "Type", Desc: "Fuzzy Filter"},
-			{Key: "Enter", Desc: "Apply"},
-			{Key: "Esc / /", Desc: "Close Search"},
+			{Key: "Enter", Desc: "Apply Filter"},
+			{Key: "Esc", Desc: "Cancel Search"},
 		}
 	} else {
 		keys = []components.KeyHelp{
