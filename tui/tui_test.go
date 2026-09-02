@@ -120,3 +120,21 @@ func TestReadOnlyOption(t *testing.T) {
 		t.Fatalf("expected activeMode test, got %s", m.state.ActiveMode)
 	}
 }
+
+func TestPermissionLockWithoutCredentials(t *testing.T) {
+	sess := state.NewSessionState()
+	sess.TestKeyID = ""
+	sess.TestKeySecret = ""
+	sess.LiveKeyID = ""
+	sess.LiveKeySecret = ""
+	sess.SyncActiveCredentials()
+
+	// Test write permission lock
+	allowed, errMsg := sess.CanPerformAction(true)
+	if allowed {
+		t.Fatal("expected write action to be blocked when no credentials exist")
+	}
+	if errMsg == "" {
+		t.Fatal("expected non-empty error message")
+	}
+}

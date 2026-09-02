@@ -310,6 +310,12 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 			if sel, ok := a.list.SelectedItem().(actionItem); ok {
 				a.state.SelectedAction = sel.action
 				if sel.action.IsForm {
+					// Enforce write/edit permission check
+					allowed, errMsg := a.state.CanPerformAction(true)
+					if !allowed {
+						toastCmd := a.state.SetToast(errMsg, true)
+						return *a, toastCmd
+					}
 					a.state.PushScreen(state.ScreenForm, sel.action.Title)
 				} else {
 					a.state.PushScreen(state.ScreenTable, sel.action.Title)

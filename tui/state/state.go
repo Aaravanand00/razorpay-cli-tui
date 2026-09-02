@@ -195,15 +195,15 @@ func (s *SessionState) HasCredentials() bool {
 
 func (s *SessionState) CanPerformAction(isWrite bool) (bool, string) {
 	if s.IsReadOnly && isWrite {
-		return false, "Write operations are disabled in Read-Only mode."
+		return false, "🔒 Action Locked: Create/Update operations are disabled in Read-Only mode."
 	}
 	if s.ActiveMode == "live" {
 		if !s.HasLiveCredentials() {
-			return false, "Live credentials required for this action. Press 'c' to configure Live keys."
+			return false, "🔒 Action Locked: Live API key ('rzp_live_...') required for this operation. Press 'c' to configure."
 		}
 	} else {
 		if !s.HasTestCredentials() {
-			return false, "Test credentials required for this action. Press 'c' to configure Test keys."
+			return false, "🔒 Action Locked: Test API key ('rzp_test_...') required for this operation. Press 'c' to configure."
 		}
 	}
 	return true, ""
