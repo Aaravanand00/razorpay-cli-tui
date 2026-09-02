@@ -83,7 +83,7 @@ func (h HelpScreen) View() string {
 		bodyHeight = 10
 	}
 
-	// 4. Main Body Content (Organized 2x2 Grid or Stacked Cards)
+	// 4. Main Body Content (2 Side-by-Side Comprehensive Cards)
 	title := styles.TitleStyle.PaddingLeft(1).Render("❓ Razorpay Terminal UI — Keyboard Shortcuts & Navigation Guide")
 
 	cardWidth := (h.width - 8) / 2
@@ -98,52 +98,37 @@ func (h HelpScreen) View() string {
 		Padding(1, 2).
 		Width(cardWidth)
 
-	// Card 1: Global Navigation
-	card1Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🌐 Global Navigation") + "\n\n" +
+	// Left Column: Navigation & Inspection
+	col1Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🌐 Navigation & Inspection Shortcuts") + "\n\n" +
 		formatShortcutRow("↑ / ↓ / j / k", "Move cursor & navigate lists") + "\n" +
-		formatShortcutRow("Enter", "Select / Open / Submit") + "\n" +
+		formatShortcutRow("Enter", "Select / Open action / View details") + "\n" +
 		formatShortcutRow("Esc", "Go back to previous screen") + "\n" +
 		formatShortcutRow("q / Ctrl+C", "Quit Razorpay TUI") + "\n" +
 		formatShortcutRow("? / h", "Toggle this Help modal") + "\n" +
-		formatShortcutRow("c", "Open Credentials Configuration")
-
-	card1 := cardStyle.Render(card1Content)
-
-	// Card 2: Data Table & Inspection
-	card2Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("📊 Data Table & JSON Inspector") + "\n\n" +
-		formatShortcutRow("↑ / ↓", "Select row in table") + "\n" +
-		formatShortcutRow("Enter", "Inspect record (Screen 4)") + "\n" +
+		formatShortcutRow("c", "Open Credentials Configuration") + "\n" +
+		formatShortcutRow("/", "Fuzzy search actions & modules") + "\n" +
 		formatShortcutRow("r", "Refresh table via live REST API") + "\n" +
 		formatShortcutRow("Tab / v / 1 / 2", "Toggle Summary ⇄ Raw JSON") + "\n" +
-		formatShortcutRow("PgUp / PgDn", "Scroll large JSON payloads") + "\n" +
-		formatShortcutRow("/", "Search / filter actions")
+		formatShortcutRow("PgUp / PgDn", "Scroll large JSON payloads")
 
-	card2 := cardStyle.Render(card2Content)
+	col1 := cardStyle.Render(col1Content)
 
-	// Card 3: Form Builder & Execution
-	card3Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("📝 Forms & API Execution") + "\n\n" +
-		formatShortcutRow("Tab / ↓", "Focus next input field") + "\n" +
-		formatShortcutRow("Shift+Tab / ↑", "Focus previous input field") + "\n" +
-		formatShortcutRow("Enter", "Submit & execute live API call") + "\n" +
-		formatShortcutRow("r", "Reset form / new transaction") + "\n" +
-		formatShortcutRow("Enter (on success)", "View created record details")
-
-	card3 := cardStyle.Render(card3Content)
-
-	// Card 4: Environments & Flags
-	card4Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🛡️ Environments & CLI Flags") + "\n\n" +
+	// Right Column: Forms & Environments
+	col2Content := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("📝 Forms & Environment Modes") + "\n\n" +
+		formatShortcutRow("Tab / ↓", "Focus next form input field") + "\n" +
+		formatShortcutRow("Shift+Tab / ↑", "Focus previous form field") + "\n" +
+		formatShortcutRow("Enter", "Submit form & execute live API") + "\n" +
 		formatShortcutRow("▲ TEST MODE", "Test Sandbox (rzp_test_...)") + "\n" +
 		formatShortcutRow("● LIVE MODE", "Live Production (rzp_live_...)") + "\n" +
-		formatShortcutRow("🛡️ READ-ONLY", "--read-only (blocks mutations)") + "\n" +
+		formatShortcutRow("🛡️ READ-ONLY", "--read-only (locks write ops)") + "\n" +
 		formatShortcutRow("← / → / 1 / 2", "Switch mode in Config Screen") + "\n" +
 		formatShortcutRow("go run . tui", "Launch Razorpay Terminal UI")
 
-	card4 := cardStyle.Render(card4Content)
+	col2 := cardStyle.Render(col2Content)
 
-	row1 := lipgloss.JoinHorizontal(lipgloss.Top, card1, "  ", card2)
-	row2 := lipgloss.JoinHorizontal(lipgloss.Top, card3, "  ", card4)
+	gridRow := lipgloss.JoinHorizontal(lipgloss.Top, col1, "  ", col2)
 
-	mainContent := "\n" + title + "\n\n" + row1 + "\n\n" + row2
+	mainContent := "\n" + title + "\n\n" + gridRow
 
 	bodyContainer := lipgloss.NewStyle().
 		Height(bodyHeight).
