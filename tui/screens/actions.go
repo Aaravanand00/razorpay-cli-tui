@@ -230,7 +230,7 @@ func GetActionsForModule(modID string) []state.ActionItem {
 
 	case "configure":
 		return []state.ActionItem{
-			{ID: "config-setup", Title: "⚙️ Configure Credentials", Description: "Configure API Key ID, Secret, and Test/Live Mode", CLICommand: "razorpay configure", HTTPMethod: "LOCAL", APIPath: "config", IsForm: true},
+			{ID: "config-setup", Title: "⚙️ Configure Credentials", Description: "Configure API Key ID, Secret and Test/Live Mode", CLICommand: "razorpay configure", HTTPMethod: "LOCAL", APIPath: "config", IsForm: true},
 		}
 
 	default:

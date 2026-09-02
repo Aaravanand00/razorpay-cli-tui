@@ -76,12 +76,12 @@ func GetModules() []state.ModuleItem {
 		{ID: "payment-links", Title: "🔗 Payment Links", Description: "Generate, notify, update and cancel standard payment links", CommandCount: 6},
 		{ID: "qr-codes", Title: "📱 QR Codes", Description: "Create BharatQR codes, monitor payments and manage status", CommandCount: 6},
 		{ID: "subscriptions", Title: "🔄 Subscriptions", Description: "Manage recurring plans, subscriptions, pauses and invoices", CommandCount: 14},
-		{ID: "route", Title: "🔀 Route", Description: "Manage linked merchant accounts, transfers, and reversals", CommandCount: 20},
-		{ID: "smart-collect", Title: "🏢 Smart Collect", Description: "Customer virtual bank accounts, UPI IDs, and TPV payers", CommandCount: 13},
-		{ID: "settlements", Title: "🏦 Settlements", Description: "View settlement transfers, instant payouts, and recon reports", CommandCount: 6},
-		{ID: "disputes", Title: "⚖️ Disputes", Description: "Track chargebacks, contest disputes, and upload evidence", CommandCount: 4},
+		{ID: "route", Title: "🔀 Route", Description: "Manage linked merchant accounts, transfers and reversals", CommandCount: 20},
+		{ID: "smart-collect", Title: "🏢 Smart Collect", Description: "Customer virtual bank accounts, UPI IDs and TPV payers", CommandCount: 13},
+		{ID: "settlements", Title: "🏦 Settlements", Description: "View settlement transfers, instant payouts and recon reports", CommandCount: 6},
+		{ID: "disputes", Title: "⚖️ Disputes", Description: "Track chargebacks, contest disputes and upload evidence", CommandCount: 4},
 		{ID: "documents", Title: "📄 Documents", Description: "Upload KYC/dispute documents and fetch file contents", CommandCount: 3},
-		{ID: "configure", Title: "⚙️ Configure", Description: "Configure API credentials, Live/Test mode, and defaults", CommandCount: 1},
+		{ID: "configure", Title: "⚙️ Configure", Description: "Configure API credentials, Live/Test mode and defaults", CommandCount: 1},
 	}
 }
 
