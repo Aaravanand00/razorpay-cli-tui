@@ -3,7 +3,9 @@ package state
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/razorpay/razorpay-cli/api"
 	"github.com/razorpay/razorpay-cli/config"
 )
@@ -21,8 +23,13 @@ const (
 )
 
 type Toast struct {
+	ID      int
 	Message string
 	IsError bool
+}
+
+type ClearToastMsg struct {
+	ToastID int
 }
 
 type ModuleItem struct {
@@ -63,9 +70,10 @@ type SessionState struct {
 	IsLiveMode bool
 	IsReadOnly bool
 
-	Toast  *Toast
-	Width  int
-	Height int
+	Toast        *Toast
+	toastCounter int
+	Width        int
+	Height       int
 }
 
 func NewSessionState() *SessionState {
@@ -186,13 +194,27 @@ func (s *SessionState) PopScreen() bool {
 	return true
 }
 
-func (s *SessionState) SetToast(msg string, isError bool) {
+func (s *SessionState) SetToast(msg string, isError bool) tea.Cmd {
+	s.toastCounter++
+	currentID := s.toastCounter
 	s.Toast = &Toast{
+		ID:      currentID,
 		Message: msg,
 		IsError: isError,
 	}
+
+	// 5-second automatic dismiss timer
+	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
+		return ClearToastMsg{ToastID: currentID}
+	})
 }
 
 func (s *SessionState) ClearToast() {
 	s.Toast = nil
+}
+
+func (s *SessionState) HandleClearToast(id int) {
+	if s.Toast != nil && s.Toast.ID == id {
+		s.Toast = nil
+	}
 }

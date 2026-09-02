@@ -31,7 +31,7 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	tki.Prompt = " Key ID:     "
 	tki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
 	tki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	tki.Width = 38
+	tki.Width = 36
 
 	tsi := textinput.New()
 	tsi.Placeholder = "Test Key Secret"
@@ -41,7 +41,7 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	tsi.Prompt = " Key Secret: "
 	tsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning)
 	tsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	tsi.Width = 38
+	tsi.Width = 36
 
 	lki := textinput.New()
 	lki.Placeholder = "rzp_live_..."
@@ -49,7 +49,7 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	lki.Prompt = " Key ID:     "
 	lki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
 	lki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	lki.Width = 38
+	lki.Width = 36
 
 	lsi := textinput.New()
 	lsi.Placeholder = "Live Key Secret"
@@ -59,9 +59,8 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	lsi.Prompt = " Key Secret: "
 	lsi.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSuccess)
 	lsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	lsi.Width = 38
+	lsi.Width = 36
 
-	// Default focus on test key
 	tki.Focus()
 
 	return ConfigScreen{
@@ -120,6 +119,16 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				c.setFocus(3)
 			}
 			return *c, nil
+		case "left":
+			if c.focusIndex == 0 {
+				c.activeMode = "test"
+				return *c, nil
+			}
+		case "right":
+			if c.focusIndex == 0 {
+				c.activeMode = "live"
+				return *c, nil
+			}
 		case " ", "m":
 			if c.focusIndex == 0 {
 				if c.activeMode == "test" {
@@ -129,50 +138,68 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				}
 				return *c, nil
 			}
+		case "1", "t":
+			if c.focusIndex == 0 {
+				c.activeMode = "test"
+				return *c, nil
+			}
+		case "2", "l":
+			if c.focusIndex == 0 {
+				c.activeMode = "live"
+				return *c, nil
+			}
 		case "enter":
 			testKey := strings.TrimSpace(c.testKeyInput.Value())
 			testSec := strings.TrimSpace(c.testSecInput.Value())
 			liveKey := strings.TrimSpace(c.liveKeyInput.Value())
 			liveSec := strings.TrimSpace(c.liveSecInput.Value())
 
-			// 1. Validation: At least one key pair or clear inputs
+			// 1. Check if completely empty
 			if testKey == "" && testSec == "" && liveKey == "" && liveSec == "" {
-				c.state.SetToast("Please enter at least one valid Razorpay API Key ID and Secret", true)
-				return *c, nil
+				cmd := c.state.SetToast("Please enter at least one valid Razorpay API Key ID and Secret", true)
+				return *c, cmd
 			}
 
-			// 2. Validate Test Key format (must start with rzp_test_)
-			if testKey != "" {
-				if !strings.HasPrefix(testKey, "rzp_test_") {
-					c.state.SetToast("Invalid Test Key ID format: Must start with 'rzp_test_...'", true)
-					return *c, nil
+			// 2. Validate focused box or active mode box first
+			var validationErr string
+
+			// If user is currently in Live box or active mode is Live, check Live credentials first
+			if c.focusIndex == 3 || c.focusIndex == 4 || c.activeMode == "live" {
+				if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
+					validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+				} else if liveKey != "" && liveSec == "" {
+					validationErr = "Please enter the Live Key Secret for your Live Key ID"
+				} else if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
+					validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+				} else if testKey != "" && testSec == "" {
+					validationErr = "Please enter the Test Key Secret for your Test Key ID"
 				}
-				if testSec == "" {
-					c.state.SetToast("Please enter the Test Key Secret for your Test Key ID", true)
-					return *c, nil
+			} else {
+				// Otherwise check Test credentials first
+				if testKey != "" && !strings.HasPrefix(testKey, "rzp_test_") {
+					validationErr = "Invalid Test Key ID format: Must start with 'rzp_test_...'"
+				} else if testKey != "" && testSec == "" {
+					validationErr = "Please enter the Test Key Secret for your Test Key ID"
+				} else if liveKey != "" && !strings.HasPrefix(liveKey, "rzp_live_") {
+					validationErr = "Invalid Live Key ID format: Must start with 'rzp_live_...'"
+				} else if liveKey != "" && liveSec == "" {
+					validationErr = "Please enter the Live Key Secret for your Live Key ID"
 				}
 			}
 
-			// 3. Validate Live Key format (must start with rzp_live_)
-			if liveKey != "" {
-				if !strings.HasPrefix(liveKey, "rzp_live_") {
-					c.state.SetToast("Invalid Live Key ID format: Must start with 'rzp_live_...'", true)
-					return *c, nil
-				}
-				if liveSec == "" {
-					c.state.SetToast("Please enter the Live Key Secret for your Live Key ID", true)
-					return *c, nil
-				}
+			if validationErr != "" {
+				cmd := c.state.SetToast(validationErr, true)
+				return *c, cmd
 			}
 
-			// 4. Save to config
+			// 3. Save to config
 			err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
 			if err != nil {
-				c.state.SetToast("Failed to save config: "+err.Error(), true)
-				return *c, nil
+				cmd := c.state.SetToast("Failed to save config: "+err.Error(), true)
+				return *c, cmd
 			}
 
-			// 5. Update runtime session state
+			// 4. Update state
 			c.state.ActiveMode = c.activeMode
 			c.state.TestKeyID = testKey
 			c.state.TestKeySecret = testSec
@@ -231,7 +258,7 @@ func (c ConfigScreen) View() string {
 	headerView := components.RenderHeader(c.state, c.width)
 	sections = append(sections, headerView)
 
-	// 2. Toast
+	// 2. Toast (Auto-clears after 5s)
 	toastView := components.RenderToast(c.state)
 	if toastView != "" {
 		sections = append(sections, toastView)
@@ -239,9 +266,9 @@ func (c ConfigScreen) View() string {
 
 	// 3. Footer Keys
 	keys := []components.KeyHelp{
-		{Key: "Tab / Shift+Tab", Desc: "Next/Prev Field"},
+		{Key: "Tab / Shift+Tab", Desc: "Switch Field"},
 		{Key: "↑ / ↓", Desc: "Navigate"},
-		{Key: "Space", Desc: "Toggle Mode"},
+		{Key: "← / →", Desc: "Select Mode"},
 		{Key: "Enter", Desc: "Save All"},
 		{Key: "Esc", Desc: "Back"},
 		{Key: "Ctrl+C", Desc: "Quit"},
@@ -261,25 +288,30 @@ func (c ConfigScreen) View() string {
 		bodyHeight = 12
 	}
 
-	// Active Mode Switcher Row
-	var modeSwitch string
+	// Active Mode Switcher Row with Clean Arrow Controls
+	var testPill, livePill string
 	if c.activeMode == "test" {
-		testPill := styles.BadgeTestStyle.Render("● TEST MODE (Sandbox Active)")
-		livePill := lipgloss.NewStyle().Foreground(styles.ColorTextDim).Render("○ LIVE MODE (Production)")
-		modeSwitch = lipgloss.JoinHorizontal(lipgloss.Center, "   Active Environment:  ", testPill, "   ", livePill)
+		testPill = styles.BadgeTestStyle.Render("● 1. TEST SANDBOX (ACTIVE)")
+		livePill = lipgloss.NewStyle().Foreground(styles.ColorTextDim).Background(styles.ColorNavy).Padding(0, 1).Render("○ 2. LIVE PRODUCTION")
 	} else {
-		testPill := lipgloss.NewStyle().Foreground(styles.ColorTextDim).Render("○ TEST MODE (Sandbox)")
-		livePill := styles.BadgeLiveStyle.Render("● LIVE MODE (Production Active)")
-		modeSwitch = lipgloss.JoinHorizontal(lipgloss.Center, "   Active Environment:  ", testPill, "   ", livePill)
+		testPill = lipgloss.NewStyle().Foreground(styles.ColorTextDim).Background(styles.ColorNavy).Padding(0, 1).Render("○ 1. TEST SANDBOX")
+		livePill = styles.BadgeLiveStyle.Render("● 2. LIVE PRODUCTION (ACTIVE)")
 	}
+
+	modeSwitch := lipgloss.JoinHorizontal(lipgloss.Center,
+		"  Active Environment:  ",
+		testPill,
+		"    ",
+		livePill,
+	)
 
 	if c.focusIndex == 0 {
 		modeSwitch = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ColorBorderFocus).
-			Background(styles.ColorNavy).
+			Background(styles.ColorCardBg).
 			Padding(0, 1).
-			Render("▶ " + modeSwitch + "  [Press Space to Toggle Active Mode]")
+			Render("▶ " + modeSwitch + "   [Use ← / → Arrows or 1/2 to Switch]")
 	} else {
 		modeSwitch = lipgloss.NewStyle().
 			Padding(0, 1).
@@ -287,17 +319,17 @@ func (c ConfigScreen) View() string {
 	}
 
 	// Dynamic Box Widths
-	boxWidth := (c.width - 8) / 2
-	if boxWidth < 42 {
-		boxWidth = 42
+	boxWidth := (c.width - 10) / 2
+	if boxWidth < 40 {
+		boxWidth = 40
 	}
 
-	// Test Box Styling (Highlight when focused)
+	// Test Box Styling
 	testBorderColor := styles.ColorBorder
 	testHeaderBadge := styles.BadgeTestStyle.Render("▲ TEST SANDBOX")
 	if c.focusIndex == 1 || c.focusIndex == 2 {
 		testBorderColor = styles.ColorWarning
-		testHeaderBadge = styles.BadgeTestStyle.Render("▶ ▲ TEST SANDBOX (ACTIVE INPUT)")
+		testHeaderBadge = styles.BadgeTestStyle.Render("▶ ▲ TEST SANDBOX (TYPING HERE)")
 	}
 
 	testBoxStyle := lipgloss.NewStyle().
@@ -310,12 +342,12 @@ func (c ConfigScreen) View() string {
 		c.testKeyInput.View() + "\n\n" +
 		c.testSecInput.View()
 
-	// Live Box Styling (Highlight when focused)
+	// Live Box Styling
 	liveBorderColor := styles.ColorBorder
 	liveHeaderBadge := styles.BadgeLiveStyle.Render("● LIVE PRODUCTION")
 	if c.focusIndex == 3 || c.focusIndex == 4 {
 		liveBorderColor = styles.ColorSuccess
-		liveHeaderBadge = styles.BadgeLiveStyle.Render("▶ ● LIVE PRODUCTION (ACTIVE INPUT)")
+		liveHeaderBadge = styles.BadgeLiveStyle.Render("▶ ● LIVE PRODUCTION (TYPING HERE)")
 	}
 
 	liveBoxStyle := lipgloss.NewStyle().
@@ -328,9 +360,9 @@ func (c ConfigScreen) View() string {
 		c.liveKeyInput.View() + "\n\n" +
 		c.liveSecInput.View()
 
-	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "  ", liveBoxStyle.Render(liveContent))
+	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "   ", liveBoxStyle.Render(liveContent))
 
-	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Keys Format: Test Key must start with 'rzp_test_...', Live Key must start with 'rzp_live_...'. Use 'Tab' to move.")
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Format: Test Key starts with 'rzp_test_...', Live Key starts with 'rzp_live_...'. Press 'Tab' to move.")
 
 	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
 	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")

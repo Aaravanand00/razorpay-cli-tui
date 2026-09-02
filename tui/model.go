@@ -47,6 +47,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case state.ClearToastMsg:
+		m.state.HandleClearToast(msg.ToastID)
+		return m, nil
+
 	case tea.WindowSizeMsg:
 		m.state.Width = msg.Width
 		m.state.Height = msg.Height
