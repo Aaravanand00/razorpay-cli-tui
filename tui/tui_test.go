@@ -223,3 +223,31 @@ func TestDetailViewScreenTabsAndFormatting(t *testing.T) {
 		t.Fatal("expected back on summary card")
 	}
 }
+
+func TestFormViewScreenFieldGenerationAndNavigation(t *testing.T) {
+	sess := state.NewSessionState()
+	action := state.ActionItem{
+		ID:         "orders-create",
+		Title:      "➕ Create Order",
+		CLICommand: "razorpay orders create",
+		HTTPMethod: "POST",
+		APIPath:    "/v1/orders",
+		IsForm:     true,
+	}
+
+	fv := screens.NewFormViewScreen(sess, action, 100, 30)
+	view := fv.View()
+	if view == "" {
+		t.Fatal("expected non-empty form view")
+	}
+	if !strings.Contains(view, "Amount (₹ INR)") {
+		t.Fatal("expected Amount field in orders-create form")
+	}
+
+	// Test Tab to navigate to next field
+	fv, _ = fv.Update(tea.KeyMsg{Type: tea.KeyTab})
+	viewAfterTab := fv.View()
+	if viewAfterTab == "" {
+		t.Fatal("expected non-empty view after tab")
+	}
+}

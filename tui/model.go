@@ -12,6 +12,7 @@ type Model struct {
 	actions screens.ActionsScreen
 	table   screens.TableViewScreen
 	detail  screens.DetailViewScreen
+	form    screens.FormViewScreen
 	config  screens.ConfigScreen
 	ready   bool
 }
@@ -65,6 +66,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.config.SetSize(msg.Width, msg.Height)
 		m.table.SetSize(msg.Width, msg.Height)
 		m.detail.SetSize(msg.Width, msg.Height)
+		m.form.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
@@ -76,7 +78,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.state.CurrentScreen == state.ScreenHome ||
 				m.state.CurrentScreen == state.ScreenActions ||
 				m.state.CurrentScreen == state.ScreenTable ||
-				m.state.CurrentScreen == state.ScreenDetail {
+				m.state.CurrentScreen == state.ScreenDetail ||
+				m.state.CurrentScreen == state.ScreenForm {
 				return m, tea.Quit
 			}
 		case "esc":
@@ -122,6 +125,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.state.CurrentScreen == state.ScreenTable && prevScreen == state.ScreenActions {
 			m.table = screens.NewTableViewScreen(m.state, m.state.SelectedAction, m.state.Width, m.state.Height)
 			cmds = append(cmds, m.table.Init())
+		} else if m.state.CurrentScreen == state.ScreenForm && prevScreen == state.ScreenActions {
+			m.form = screens.NewFormViewScreen(m.state, m.state.SelectedAction, m.state.Width, m.state.Height)
 		}
 
 	case state.ScreenTable:
@@ -138,6 +143,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.detail, cmd = m.detail.Update(msg)
 		cmds = append(cmds, cmd)
+
+	case state.ScreenForm:
+		var cmd tea.Cmd
+		prevScreen := m.state.CurrentScreen
+		m.form, cmd = m.form.Update(msg)
+		cmds = append(cmds, cmd)
+
+		if m.state.CurrentScreen == state.ScreenDetail && prevScreen == state.ScreenForm {
+			m.detail = screens.NewDetailViewScreen(m.state, m.state.Width, m.state.Height)
+		}
 
 	case state.ScreenConfig:
 		var cmd tea.Cmd
@@ -167,6 +182,8 @@ func (m Model) View() string {
 		return m.table.View()
 	case state.ScreenDetail:
 		return m.detail.View()
+	case state.ScreenForm:
+		return m.form.View()
 	case state.ScreenConfig:
 		return m.config.View()
 	default:
