@@ -156,4 +156,47 @@ var (
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Background(ColorError).
 			Padding(0, 2)
+
+	// Table Styles
+	TableHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(ColorSecondary).
+				Background(ColorNavy).
+				Padding(0, 1)
+
+	TableCellSelectedStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(ColorPrimary)
+
+	TableContainerStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(ColorBorder).
+				Padding(0, 1)
+
+	// Status Pills
+	StatusPillPaid = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#10B981")).
+			Render("● paid")
+
+	StatusPillCaptured = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#10B981")).
+				Render("● captured")
+
+	StatusPillCreated = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#F59E0B")).
+				Render("▲ created")
+
+	StatusPillActive = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#10B981")).
+				Render("● active")
+
+	StatusPillFailed = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#EF4444")).
+				Render("✖ failed")
 )

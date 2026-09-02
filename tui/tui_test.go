@@ -138,3 +138,42 @@ func TestPermissionLockWithoutCredentials(t *testing.T) {
 		t.Fatal("expected non-empty error message")
 	}
 }
+
+func TestTableViewInitializationAndColumns(t *testing.T) {
+	sess := state.NewSessionState()
+	action := state.ActionItem{
+		ID:         "orders-list",
+		Title:      "📋 List Orders",
+		CLICommand: "razorpay orders list",
+		HTTPMethod: "GET",
+		APIPath:    "/v1/orders",
+	}
+
+	tv := screens.NewTableViewScreen(sess, action, 100, 30)
+	view := tv.View()
+	if view == "" {
+		t.Fatal("expected non-empty table view")
+	}
+
+	// Simulate loaded items
+	mockItems := []map[string]interface{}{
+		{
+			"id":         "order_DBJOWzybf0sJbb",
+			"amount":     50000,
+			"currency":   "INR",
+			"status":     "paid",
+			"receipt":    "Receipt #101",
+			"created_at": 1672531199,
+		},
+	}
+
+	tv, _ = tv.Update(screens.TableDataLoadedMsg{
+		Items:   mockItems,
+		RawJSON: `[{"id":"order_DBJOWzybf0sJbb"}]`,
+	})
+
+	updatedView := tv.View()
+	if updatedView == "" {
+		t.Fatal("expected non-empty updated table view")
+	}
+}

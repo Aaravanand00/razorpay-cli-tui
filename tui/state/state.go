@@ -71,6 +71,10 @@ type SessionState struct {
 	IsLiveMode bool
 	IsReadOnly bool
 
+	// Data Inspection across screens
+	SelectedRowData map[string]interface{}
+	SelectedRawJSON string
+
 	Toast        *Toast
 	toastCounter int
 	Width        int

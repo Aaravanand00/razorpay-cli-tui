@@ -10,6 +10,7 @@ type Model struct {
 	state   *state.SessionState
 	home    screens.HomeScreen
 	actions screens.ActionsScreen
+	table   screens.TableViewScreen
 	config  screens.ConfigScreen
 	ready   bool
 }
@@ -61,6 +62,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.home.SetSize(msg.Width, msg.Height)
 		m.actions.SetSize(msg.Width, msg.Height)
 		m.config.SetSize(msg.Width, msg.Height)
+		m.table.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
 
@@ -108,7 +110,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case state.ScreenActions:
 		var cmd tea.Cmd
+		prevScreen := m.state.CurrentScreen
 		m.actions, cmd = m.actions.Update(msg)
+		cmds = append(cmds, cmd)
+
+		if m.state.CurrentScreen == state.ScreenTable && prevScreen == state.ScreenActions {
+			m.table = screens.NewTableViewScreen(m.state, m.state.SelectedAction, m.state.Width, m.state.Height)
+			cmds = append(cmds, m.table.Init())
+		}
+
+	case state.ScreenTable:
+		var cmd tea.Cmd
+		m.table, cmd = m.table.Update(msg)
 		cmds = append(cmds, cmd)
 
 	case state.ScreenConfig:
@@ -130,6 +143,8 @@ func (m Model) View() string {
 		return m.home.View()
 	case state.ScreenActions:
 		return m.actions.View()
+	case state.ScreenTable:
+		return m.table.View()
 	case state.ScreenConfig:
 		return m.config.View()
 	default:
