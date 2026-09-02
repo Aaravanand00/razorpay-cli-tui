@@ -100,7 +100,7 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			} else if c.focusIndex == 1 {
 				c.setFocus(2)
 			} else if c.focusIndex == 2 {
-				c.setFocus(0)
+				c.setFocus(3)
 			} else if c.focusIndex == 3 {
 				c.setFocus(4)
 			} else if c.focusIndex == 4 {
@@ -109,35 +109,17 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			return *c, nil
 		case "up":
 			if c.focusIndex == 0 {
-				c.setFocus(2)
+				c.setFocus(4)
 			} else if c.focusIndex == 1 {
 				c.setFocus(0)
 			} else if c.focusIndex == 2 {
 				c.setFocus(1)
 			} else if c.focusIndex == 3 {
-				c.setFocus(0)
+				c.setFocus(2)
 			} else if c.focusIndex == 4 {
 				c.setFocus(3)
 			}
 			return *c, nil
-		case "right":
-			// Jump from Test Box -> Live Box
-			if c.focusIndex == 1 {
-				c.setFocus(3)
-				return *c, nil
-			} else if c.focusIndex == 2 {
-				c.setFocus(4)
-				return *c, nil
-			}
-		case "left":
-			// Jump from Live Box -> Test Box
-			if c.focusIndex == 3 {
-				c.setFocus(1)
-				return *c, nil
-			} else if c.focusIndex == 4 {
-				c.setFocus(2)
-				return *c, nil
-			}
 		case " ", "m":
 			if c.focusIndex == 0 {
 				if c.activeMode == "test" {
@@ -153,13 +135,44 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			liveKey := strings.TrimSpace(c.liveKeyInput.Value())
 			liveSec := strings.TrimSpace(c.liveSecInput.Value())
 
+			// 1. Validation: At least one key pair or clear inputs
+			if testKey == "" && testSec == "" && liveKey == "" && liveSec == "" {
+				c.state.SetToast("Please enter at least one valid Razorpay API Key ID and Secret", true)
+				return *c, nil
+			}
+
+			// 2. Validate Test Key format (must start with rzp_test_)
+			if testKey != "" {
+				if !strings.HasPrefix(testKey, "rzp_test_") {
+					c.state.SetToast("Invalid Test Key ID format: Must start with 'rzp_test_...'", true)
+					return *c, nil
+				}
+				if testSec == "" {
+					c.state.SetToast("Please enter the Test Key Secret for your Test Key ID", true)
+					return *c, nil
+				}
+			}
+
+			// 3. Validate Live Key format (must start with rzp_live_)
+			if liveKey != "" {
+				if !strings.HasPrefix(liveKey, "rzp_live_") {
+					c.state.SetToast("Invalid Live Key ID format: Must start with 'rzp_live_...'", true)
+					return *c, nil
+				}
+				if liveSec == "" {
+					c.state.SetToast("Please enter the Live Key Secret for your Live Key ID", true)
+					return *c, nil
+				}
+			}
+
+			// 4. Save to config
 			err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
 			if err != nil {
 				c.state.SetToast("Failed to save config: "+err.Error(), true)
 				return *c, nil
 			}
 
-			// Update state
+			// 5. Update runtime session state
 			c.state.ActiveMode = c.activeMode
 			c.state.TestKeyID = testKey
 			c.state.TestKeySecret = testSec
@@ -227,7 +240,7 @@ func (c ConfigScreen) View() string {
 	// 3. Footer Keys
 	keys := []components.KeyHelp{
 		{Key: "Tab / Shift+Tab", Desc: "Next/Prev Field"},
-		{Key: "← / →", Desc: "Switch Box"},
+		{Key: "↑ / ↓", Desc: "Navigate"},
 		{Key: "Space", Desc: "Toggle Mode"},
 		{Key: "Enter", Desc: "Save All"},
 		{Key: "Esc", Desc: "Back"},
@@ -317,7 +330,7 @@ func (c ConfigScreen) View() string {
 
 	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "  ", liveBoxStyle.Render(liveContent))
 
-	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Use 'Tab' or '← / →' arrows to jump between Test and Live boxes. Enter your keys once and press Enter to save!")
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).Render("💡 Keys Format: Test Key must start with 'rzp_test_...', Live Key must start with 'rzp_live_...'. Use 'Tab' to move.")
 
 	title := styles.TitleStyle.Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
 	desc := styles.SubtitleStyle.Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
