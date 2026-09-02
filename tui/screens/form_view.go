@@ -144,6 +144,12 @@ func (fv *FormViewScreen) Update(msg tea.Msg) (FormViewScreen, tea.Cmd) {
 				return *fv, nil
 			}
 
+		case "c":
+			if fv.formState == FormStateError || fv.formState == FormStateSuccess {
+				fv.state.PushScreen(state.ScreenConfig, "⚙️ Configure")
+				return *fv, nil
+			}
+
 		case "enter":
 			if fv.formState == FormStateSuccess {
 				// Transition to Detail View
@@ -179,10 +185,6 @@ func (fv *FormViewScreen) Update(msg tea.Msg) (FormViewScreen, tea.Cmd) {
 				fv.formState = FormStateSubmitting
 				return *fv, tea.Batch(fv.spinner.Tick, fv.executeActionCmd())
 			}
-
-		case "c":
-			fv.state.PushScreen(state.ScreenConfig, "⚙️ Configure")
-			return *fv, nil
 		}
 	}
 
@@ -414,16 +416,22 @@ func (fv FormViewScreen) View() string {
 			{Key: "Enter", Desc: "Inspect Full Details (Screen 4)"},
 			{Key: "r", Desc: "New Entry"},
 			{Key: "Esc", Desc: "Back to Actions"},
-			{Key: "q", Desc: "Quit"},
+			{Key: "Ctrl+C", Desc: "Quit"},
+		}
+	} else if fv.formState == FormStateError {
+		keys = []components.KeyHelp{
+			{Key: "Enter / r", Desc: "Retry"},
+			{Key: "c", Desc: "Config"},
+			{Key: "Esc", Desc: "Back"},
+			{Key: "Ctrl+C", Desc: "Quit"},
 		}
 	} else {
 		keys = []components.KeyHelp{
 			{Key: "Tab / ↓", Desc: "Next Field"},
 			{Key: "Shift+Tab", Desc: "Prev Field"},
 			{Key: "Enter", Desc: "Submit Action"},
-			{Key: "c", Desc: "Config"},
 			{Key: "Esc", Desc: "Back"},
-			{Key: "q", Desc: "Quit"},
+			{Key: "Ctrl+C", Desc: "Quit"},
 		}
 	}
 	footerView := components.RenderFooter(fv.state, fv.width, keys)
