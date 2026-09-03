@@ -86,9 +86,21 @@ func (fv *FormViewScreen) PopulateWithFlags(flags map[string]string) {
 	}
 	for i := range fv.fields {
 		k := fv.fields[i].Key
-		if val, exists := flags[k]; exists {
-			fv.fields[i].Input.SetValue(val)
-		} else if val, exists := flags[strings.ReplaceAll(k, "_", "-")]; exists {
+		val, exists := flags[k]
+		if !exists {
+			val, exists = flags[strings.ReplaceAll(k, "_", "-")]
+		}
+		if exists {
+			// If this form field represents Rupees (₹ INR), convert CLI paise value to Rupees
+			if fv.fields[i].IsAmount {
+				if amtPaise, err := strconv.ParseFloat(val, 64); err == nil {
+					if amtPaise >= 100 && int64(amtPaise)%100 == 0 {
+						val = fmt.Sprintf("%d", int64(amtPaise/100))
+					} else if amtPaise >= 100 {
+						val = fmt.Sprintf("%.2f", amtPaise/100.0)
+					}
+				}
+			}
 			fv.fields[i].Input.SetValue(val)
 		}
 	}
@@ -151,6 +163,12 @@ func (fv *FormViewScreen) Update(msg tea.Msg) (FormViewScreen, tea.Cmd) {
 				fv.fields[fv.focusedIdx].Input.Focus()
 				fv.state.ClearToast()
 				return *fv, textinput.Blink
+			}
+
+		case "a":
+			if fv.formState == FormStateError || fv.formState == FormStateSuccess {
+				fv.state.PushScreen(state.ScreenAIAssist, "🤖 AI Assist")
+				return *fv, nil
 			}
 
 		case "r":
@@ -435,23 +453,25 @@ func (fv FormViewScreen) View() string {
 	if fv.formState == FormStateSuccess {
 		keys = []components.KeyHelp{
 			{Key: "Enter", Desc: "Inspect Full Details (Screen 4)"},
+			{Key: "a", Desc: "AI Assist"},
 			{Key: "r", Desc: "New Entry"},
 			{Key: "Esc", Desc: "Back to Actions"},
-			{Key: "Ctrl+C", Desc: "Quit"},
+			{Key: "q", Desc: "Quit"},
 		}
 	} else if fv.formState == FormStateError {
 		keys = []components.KeyHelp{
 			{Key: "Enter / r", Desc: "Retry"},
+			{Key: "a", Desc: "AI Assist"},
 			{Key: "c", Desc: "Config"},
 			{Key: "Esc", Desc: "Back"},
-			{Key: "Ctrl+C", Desc: "Quit"},
+			{Key: "q", Desc: "Quit"},
 		}
 	} else {
 		keys = []components.KeyHelp{
 			{Key: "Tab / ↓", Desc: "Next Field"},
 			{Key: "Shift+Tab", Desc: "Prev Field"},
 			{Key: "Enter", Desc: "Submit Action"},
-			{Key: "Esc", Desc: "Back"},
+			{Key: "Esc", Desc: "Back to Actions"},
 			{Key: "Ctrl+C", Desc: "Quit"},
 		}
 	}

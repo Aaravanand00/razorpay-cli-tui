@@ -43,6 +43,10 @@ func (h *HelpScreen) Update(msg tea.Msg) (HelpScreen, tea.Cmd) {
 		case "esc", "?", "h", "q":
 			h.state.PopScreen()
 			return *h, nil
+		case "a":
+			h.state.PopScreen()
+			h.state.PushScreen(state.ScreenAIAssist, "🤖 AI Assist")
+			return *h, nil
 		}
 	}
 
@@ -65,6 +69,7 @@ func (h HelpScreen) View() string {
 	// 3. Footer Keys
 	keys := []components.KeyHelp{
 		{Key: "Esc / ? / q", Desc: "Close Help"},
+		{Key: "a", Desc: "AI Assist"},
 		{Key: "c", Desc: "Config"},
 		{Key: "Ctrl+C", Desc: "Quit TUI"},
 	}

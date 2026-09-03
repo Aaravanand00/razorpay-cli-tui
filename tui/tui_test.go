@@ -250,6 +250,16 @@ func TestFormViewScreenFieldGenerationAndNavigation(t *testing.T) {
 	if viewAfterTab == "" {
 		t.Fatal("expected non-empty view after tab")
 	}
+
+	// Test PopulateWithFlags converts paise 50000 to rupees 500
+	fv.PopulateWithFlags(map[string]string{
+		"amount":   "50000",
+		"currency": "INR",
+	})
+	popView := fv.View()
+	if !strings.Contains(popView, "500") {
+		t.Fatalf("expected form to contain 500 rupees, got: %s", popView)
+	}
 }
 
 func TestHelpScreenAndGlobalToggle(t *testing.T) {
@@ -309,10 +319,17 @@ func TestAIAssistToggleAndPreview(t *testing.T) {
 		t.Fatal("expected AI Assist header in view")
 	}
 
-	// Press 'a' to close AI Assist
+	// Type 'a' should be accepted into input without closing
 	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenAIAssist {
+		t.Fatalf("typing 'a' should not close AI Assist screen, got %v", m.state.CurrentScreen)
+	}
+
+	// Press 'esc' to close AI Assist
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	m = model.(Model)
 	if m.state.CurrentScreen != state.ScreenHome {
-		t.Fatalf("expected return to ScreenHome after 'a' toggle, got %v", m.state.CurrentScreen)
+		t.Fatalf("expected return to ScreenHome after 'esc', got %v", m.state.CurrentScreen)
 	}
 }

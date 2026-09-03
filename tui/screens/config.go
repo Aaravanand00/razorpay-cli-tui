@@ -63,14 +63,14 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	lsi.Width = 36
 
 	aki := textinput.New()
-	aki.Placeholder = "sk-ant-api03-... (Anthropic API Key)"
+	aki.Placeholder = "Gemini / Anthropic API Key (e.g. AQ... or sk-ant-...)"
 	aki.SetValue(config.AIApiKey())
 	aki.EchoMode = textinput.EchoPassword
 	aki.EchoCharacter = '•'
-	aki.Prompt = " Anthropic Key: "
+	aki.Prompt = " AI API Key:    "
 	aki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
 	aki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
-	aki.Width = 48
+	aki.Width = 52
 
 	tki.Focus()
 
@@ -167,6 +167,11 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			if c.focusIndex == 0 {
 				c.activeMode = "live"
 				c.state.ClearToast()
+				return *c, nil
+			}
+		case "a":
+			if c.focusIndex == 0 {
+				c.state.PushScreen(state.ScreenAIAssist, "🤖 AI Assist")
 				return *c, nil
 			}
 		case "enter":
@@ -320,6 +325,7 @@ func (c ConfigScreen) View() string {
 	keys := []components.KeyHelp{
 		{Key: "Tab / Shift+Tab", Desc: "Switch Field"},
 		{Key: "← / →", Desc: "Select Mode"},
+		{Key: "a", Desc: "AI Assist"},
 		{Key: "Enter", Desc: "Save All"},
 		{Key: "?/h", Desc: "Help"},
 		{Key: "Esc", Desc: "Back"},
@@ -419,10 +425,10 @@ func (c ConfigScreen) View() string {
 
 	// AI Box Styling
 	aiBorderColor := styles.ColorBorder
-	aiHeaderBadge := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🤖 ANTHROPIC AI ASSIST (OPTIONAL)")
+	aiHeaderBadge := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🤖 AI ASSISTANT — GEMINI / ANTHROPIC (OPTIONAL)")
 	if c.focusIndex == 5 {
 		aiBorderColor = styles.ColorSecondary
-		aiHeaderBadge = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("▶ 🤖 ANTHROPIC AI ASSIST (TYPING HERE)")
+		aiHeaderBadge = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("▶ 🤖 AI ASSISTANT — GEMINI / ANTHROPIC (TYPING HERE)")
 	}
 
 	aiBoxStyle := lipgloss.NewStyle().

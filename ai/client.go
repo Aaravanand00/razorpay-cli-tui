@@ -17,6 +17,9 @@ const (
 	AnthropicAPIURL    = "https://api.anthropic.com/v1/messages"
 	AnthropicVersion   = "2023-06-01"
 	DefaultClaudeModel = "claude-haiku-4-5-20251001"
+
+	GeminiAPIURL       = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
+	DefaultGeminiModel = "gemini-3.6-flash"
 )
 
 type Client struct {
@@ -26,6 +29,7 @@ type Client struct {
 	rootCmd    *cobra.Command
 }
 
+// Anthropic Request/Response types
 type anthropicMessageRequest struct {
 	Model     string             `json:"model"`
 	MaxTokens int                `json:"max_tokens"`
@@ -54,13 +58,40 @@ type anthropicResponse struct {
 	} `json:"error,omitempty"`
 }
 
+// Gemini Request/Response types
+type geminiRequest struct {
+	SystemInstruction *geminiContent         `json:"system_instruction,omitempty"`
+	Contents          []geminiContent        `json:"contents"`
+	GenerationConfig  map[string]interface{} `json:"generationConfig,omitempty"`
+}
+
+type geminiContent struct {
+	Role  string       `json:"role,omitempty"`
+	Parts []geminiPart `json:"parts"`
+}
+
+type geminiPart struct {
+	Text string `json:"text"`
+}
+
+type geminiResponse struct {
+	Candidates []struct {
+		Content geminiContent `json:"content"`
+	} `json:"candidates"`
+	Error *struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	} `json:"error,omitempty"`
+}
+
 func NewClient() *Client {
 	return NewClientWithKey(config.AIApiKey())
 }
 
 func NewClientWithKey(apiKey string) *Client {
 	return &Client{
-		apiKey:     apiKey,
+		apiKey:     strings.TrimSpace(apiKey),
 		model:      DefaultClaudeModel,
 		httpClient: &http.Client{Timeout: 20 * time.Second},
 		rootCmd:    GetGlobalRootCommand(),
@@ -72,10 +103,11 @@ func (c *Client) SetRootCommand(root *cobra.Command) {
 	c.rootCmd = root
 }
 
-// GetSuggestion translates a natural-language request into a structured CommandSuggestion using Anthropic API.
+// GetSuggestion translates a natural-language request into a structured CommandSuggestion.
+// Auto-detects Google Gemini vs Anthropic Claude based on API Key prefix.
 func (c *Client) GetSuggestion(userInput, context string) (*CommandSuggestion, error) {
 	if strings.TrimSpace(c.apiKey) == "" {
-		return nil, fmt.Errorf("AI API key is not configured. Please add your API key in configuration")
+		return nil, fmt.Errorf("AI API key is not configured. Please add your Gemini or Anthropic API key in configuration")
 	}
 
 	userContent := strings.TrimSpace(userInput)
@@ -85,6 +117,98 @@ func (c *Client) GetSuggestion(userInput, context string) (*CommandSuggestion, e
 
 	systemPrompt := BuildSystemPrompt(c.rootCmd)
 
+	// Auto-detect Provider: If starts with "sk-ant-", use Anthropic Claude; otherwise use Google Gemini
+	if strings.HasPrefix(c.apiKey, "sk-ant-") {
+		return c.callAnthropic(userContent, systemPrompt)
+	}
+	return c.callGemini(userContent, systemPrompt)
+}
+
+func (c *Client) callGemini(userContent, systemPrompt string) (*CommandSuggestion, error) {
+	candidateModels := []string{"gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.6-flash"}
+	var lastErr error
+
+	reqPayload := geminiRequest{
+		SystemInstruction: &geminiContent{
+			Parts: []geminiPart{{Text: systemPrompt}},
+		},
+		Contents: []geminiContent{
+			{
+				Role:  "user",
+				Parts: []geminiPart{{Text: userContent}},
+			},
+		},
+		GenerationConfig: map[string]interface{}{
+			"response_mime_type": "application/json",
+		},
+	}
+
+	payloadBytes, err := json.Marshal(reqPayload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode Gemini request: %w", err)
+	}
+
+	for _, model := range candidateModels {
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, c.apiKey)
+
+		// Try up to 2 times for temporary 503 spikes
+		for attempt := 0; attempt < 2; attempt++ {
+			if attempt > 0 {
+				time.Sleep(500 * time.Millisecond)
+			}
+
+			req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+			if err != nil {
+				lastErr = err
+				continue
+			}
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := c.httpClient.Do(req)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			respBody, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			var geminiResp geminiResponse
+			if err := json.Unmarshal(respBody, &geminiResp); err != nil {
+				lastErr = fmt.Errorf("failed to parse Gemini response: %w (raw: %s)", err, string(respBody))
+				continue
+			}
+
+			if geminiResp.Error != nil {
+				lastErr = fmt.Errorf("Gemini API Error (%d): %s", geminiResp.Error.Code, geminiResp.Error.Message)
+				if geminiResp.Error.Code == 503 {
+					continue // retry 503
+				}
+				break // try next model if 404/400
+			}
+
+			if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
+				lastErr = fmt.Errorf("Gemini API returned empty response: %s", string(respBody))
+				continue
+			}
+
+			rawText := CleanJSONOutput(geminiResp.Candidates[0].Content.Parts[0].Text)
+			sug, err := parseSuggestionJSON(rawText)
+			if err == nil {
+				return sug, nil
+			}
+			lastErr = err
+		}
+	}
+
+	return nil, lastErr
+}
+
+func (c *Client) callAnthropic(userContent, systemPrompt string) (*CommandSuggestion, error) {
 	reqPayload := anthropicMessageRequest{
 		Model:     c.model,
 		MaxTokens: 1024,
@@ -140,6 +264,10 @@ func (c *Client) GetSuggestion(userInput, context string) (*CommandSuggestion, e
 	}
 
 	rawText = CleanJSONOutput(rawText)
+	return parseSuggestionJSON(rawText)
+}
+
+func parseSuggestionJSON(rawText string) (*CommandSuggestion, error) {
 	if strings.TrimSpace(rawText) == "" {
 		return nil, fmt.Errorf("empty response received from AI model")
 	}
@@ -162,7 +290,6 @@ func CleanJSONOutput(raw string) string {
 
 	// Strip ```json or ```
 	if strings.HasPrefix(cleaned, "```") {
-		// Remove leading ```json or ```
 		idx := strings.Index(cleaned, "\n")
 		if idx != -1 {
 			cleaned = cleaned[idx+1:]

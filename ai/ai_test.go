@@ -2,6 +2,7 @@ package ai
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -86,4 +87,28 @@ func TestCleanJSONOutput(t *testing.T) {
 			t.Fatalf("failed to unmarshal cleaned JSON: %v", err)
 		}
 	}
+}
+
+func TestGeminiLiveAPI(t *testing.T) {
+	key := os.Getenv("RAZORPAY_AI_API_KEY")
+	if key == "" {
+		t.Skip("skipping live Gemini API test because RAZORPAY_AI_API_KEY is not set")
+	}
+	client := NewClientWithKey(key)
+
+	root := &cobra.Command{Use: "razorpay"}
+	paymentsCmd := &cobra.Command{Use: "payments", Short: "Manage payments"}
+	listCmd := &cobra.Command{Use: "list", Short: "List payments"}
+	listCmd.Flags().String("status", "", "Filter by payment status")
+	listCmd.Flags().Int("count", 10, "Number of records")
+	paymentsCmd.AddCommand(listCmd)
+	root.AddCommand(paymentsCmd)
+
+	client.SetRootCommand(root)
+
+	sug, err := client.GetSuggestion("find failed payments from yesterday", "")
+	if err != nil {
+		t.Fatalf("Gemini live test failed: %v", err)
+	}
+	t.Logf("Gemini Live Suggestion Success: Resource=%s Subcommand=%s Flags=%+v Explanation=%s", sug.Resource, sug.Subcommand, sug.Flags, sug.Explanation)
 }

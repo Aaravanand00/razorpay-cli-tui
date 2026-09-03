@@ -110,9 +110,9 @@ func (m Model) renderNotConfiguredCard() string {
 	cardContent := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorWarning).Render("🔒 AI Assist Not Configured") + "\n\n" +
 		lipgloss.NewStyle().Foreground(styles.ColorText).Render(
 			"To translate natural-language prompts (e.g., 'find failed payments from yesterday') into\n"+
-				"exact CLI commands and flags with Claude Haiku, please configure your Anthropic API Key.\n\n"+
+				"exact CLI commands and flags, please configure your Gemini or Anthropic API Key.\n\n"+
 				"👉 Press [c] to open Configuration and enter your API Key,\n"+
-				"   or set the environment variable: export RAZORPAY_AI_API_KEY=sk-ant-...\n")
+				"   or set the environment variable: export RAZORPAY_AI_API_KEY=AQ... / sk-ant-...\n")
 
 	card := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

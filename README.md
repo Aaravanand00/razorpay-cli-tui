@@ -25,7 +25,7 @@ razorpay tui --read-only  # Safe Read-Only Mode (Locks all mutation operations)
 * **🔍 Detail View & Syntax-Highlighted JSON Inspector:** Dual-mode tab switcher (`Tab` / `v`) between a structured 2-column Summary Grid and a syntax-highlighted Raw JSON Tree with smooth scroll navigation.
 * **📝 Dynamic Form Builder & API Executor:** Interactive forms for resource creation/updates with required field validators, automatic currency unit conversion, smart phone number normalization (auto `+91` prefix for 10 digits while preserving international codes), and real-time execution feedback.
 * **⚙️ Dual Profile Credential Manager:** Manage independent Test Sandbox (`rzp_test_...`) and Live Production (`rzp_live_...`) credentials with safety isolation, masked secret inputs, and 1-key instant environment toggle (`c`).
-* **🤖 Natural Language AI Assist (`a` / `ctrl+a`):** Type requests in plain English or Hindi (e.g. *"find failed payments from yesterday"*, *"create order for ₹500"*) and let Claude Haiku generate the exact CLI command and flags with an interactive preview and safety confirmations before execution.
+* **🤖 Natural Language AI Assist (`a` / `ctrl+a`):** Type requests in plain English or Hindi (e.g. *"find failed payments from yesterday"*, *"create order for ₹500"*) and let Google Gemini / Claude Haiku generate the exact CLI command and flags with an interactive preview, smart amount conversion, and safety confirmations before execution.
 * **🛡️ Safe Read-Only Mode:** Explore live account data with dynamic action-specific permission locks that prevent accidental charges or mutations.
 * **❓ Global Help & Cheat Sheet Modal:** Press `?` or `h` from anywhere in the TUI to open an instant keyboard shortcuts and environment guide.
 
@@ -35,25 +35,26 @@ razorpay tui --read-only  # Safe Read-Only Mode (Locks all mutation operations)
 | :--- | :--- |
 | `↑` / `↓` / `j` / `k` | Navigate lists, tables, and form fields |
 | `Enter` | Select module / Inspect table record / Submit form |
-| `a` / `ctrl+a` | Open Natural Language AI Assistant |
+| `a` / `ctrl+a` | Open Natural Language AI Assistant (Available on ALL screens) |
 | `Tab` / `Shift+Tab` | Switch tabs (Summary ⇄ JSON Tree) / Navigate form fields |
 | `r` | Refresh live table data / Reset form |
 | `c` | Open Credentials & Environment Configuration (Test ⇄ Live ⇄ AI) |
 | `/` | Real-time fuzzy search across modules and actions |
 | `?` / `h` | Toggle Global Help & Keybindings reference modal |
-| `Esc` | Return to previous screen |
+| `Esc` | Return to previous screen / Actions menu |
 | `q` / `Ctrl+C` | Quit Razorpay TUI |
 
 ---
 
 ## 🤖 Natural Language AI Assistant
 
-The TUI includes an integrated AI Assistant powered by Anthropic Claude Haiku (`claude-haiku-4-5-20251001`):
+The TUI includes an integrated AI Assistant powered by **Google Gemini** (`gemini-flash-latest`, `gemini-2.5-flash-lite`) and **Anthropic Claude** (`claude-haiku-4-5-20251001`):
 
-1. **How it works:** Press `a` from anywhere in the TUI. Type your request in natural language. The AI introspects the entire Cobra command tree and generates the exact command, flags, and an explanation.
+1. **How it works:** Press `a` from anywhere in the TUI. Type your request in natural language. The AI dynamically introspects the entire Cobra command tree and generates the exact command, flags, and an explanation.
 2. **Safe Preview Model:** The AI **never** executes commands directly. It shows a full preview card (`Command`, `Explanation`, `Confidence Badge`, and destructive warnings for mutating operations).
-3. **Unified Execution:** Pressing `Enter` routes the suggested command through the exact same execution engine as manual TUI navigation, ensuring `--read-only` mode and credential checks apply identically.
-4. **Configuration:** Provide your Anthropic API Key via `~/.razorpay/config.yaml` (`ai_api_key`), inside the TUI via `[c] Config`, or with `export RAZORPAY_AI_API_KEY=sk-ant-...`.
+3. **Smart Currency & Pre-Fill:** AI-suggested values (like amounts in paise) are automatically converted into friendly format (₹ Rupees) and pre-filled into interactive forms.
+4. **Unified Execution:** Pressing `Enter` routes the suggested command through the exact same execution engine as manual TUI navigation, ensuring `--read-only` mode and credential checks apply identically.
+5. **Configuration:** Provide your Gemini or Anthropic API Key via `~/.razorpay/config.yaml` (`ai_api_key`), inside the TUI via `[c] Config`, or with `export RAZORPAY_AI_API_KEY=AQ...` / `export RAZORPAY_AI_API_KEY=sk-ant-...`.
 
 ---
 

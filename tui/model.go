@@ -97,8 +97,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		if matchedAction == nil && len(availableActions) > 0 {
-			matchedAction = &availableActions[0]
+		// Match Module Item
+		for _, mod := range screens.GetModules() {
+			if strings.EqualFold(mod.ID, targetMod) {
+				m.state.SelectedModule = mod
+				break
+			}
 		}
 
 		if matchedAction != nil {
@@ -108,6 +112,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state.SetToast(errMsg, true)
 				return m, nil
 			}
+
+			// Cleanly pop ScreenAIAssist and establish proper Actions hierarchy:
+			// Stack: [ScreenHome] -> [ScreenActions] -> [ScreenTable / ScreenForm]
+			// So pressing Esc returns to the Actions menu where the create/list options are!
+			m.state.PopScreen()
+			m.state.PushScreen(state.ScreenActions, m.state.SelectedModule.Title)
+			m.actions = screens.NewActionsScreen(m.state, m.state.SelectedModule.ID, m.state.Width, m.state.Height)
 
 			m.state.SelectedAction = *matchedAction
 			if !matchedAction.IsForm {
@@ -141,12 +152,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Global AI Assist Toggle ('a' or 'ctrl+a' key)
+		// Global AI Assist Open ('a' or 'ctrl+a' key)
 		if msg.String() == "a" || msg.String() == "ctrl+a" {
-			if m.state.CurrentScreen == state.ScreenAIAssist {
-				m.state.PopScreen()
-				return m, nil
-			} else if m.state.CurrentScreen != state.ScreenForm &&
+			if m.state.CurrentScreen != state.ScreenAIAssist &&
+				m.state.CurrentScreen != state.ScreenForm &&
 				m.state.CurrentScreen != state.ScreenConfig &&
 				!m.home.IsFiltering() &&
 				!m.actions.IsFiltering() {
