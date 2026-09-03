@@ -79,6 +79,12 @@ var (
 				Background(ColorError).
 				Padding(0, 1)
 
+	BadgeReadOnlyStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#0284C7")).
+				Padding(0, 1)
+
 	BadgeCountStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(ColorSecondary).
