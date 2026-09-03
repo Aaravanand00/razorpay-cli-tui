@@ -425,10 +425,10 @@ func (c ConfigScreen) View() string {
 
 	// AI Box Styling
 	aiBorderColor := styles.ColorBorder
-	aiHeaderBadge := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🤖 AI ASSISTANT — GEMINI / ANTHROPIC (OPTIONAL)")
+	aiHeaderBadge := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🤖 AI ASSISTANT (OPTIONAL)")
 	if c.focusIndex == 5 {
 		aiBorderColor = styles.ColorSecondary
-		aiHeaderBadge = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("▶ 🤖 AI ASSISTANT — GEMINI / ANTHROPIC (TYPING HERE)")
+		aiHeaderBadge = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("▶ 🤖 AI ASSISTANT (TYPING HERE)")
 	}
 
 	aiBoxStyle := lipgloss.NewStyle().
@@ -437,7 +437,15 @@ func (c ConfigScreen) View() string {
 		Padding(1, 2).
 		Width(c.width - 6)
 
-	aiContent := aiHeaderBadge + "  " + lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("(Powers natural language 'a' shortcut)") + "\n\n" +
+	activeProviderBadge := ""
+	currentKeyVal := strings.TrimSpace(c.aiKeyInput.Value())
+	if strings.HasPrefix(currentKeyVal, "AQ.") || strings.HasPrefix(currentKeyVal, "AIza") {
+		activeProviderBadge = styles.BadgeTestStyle.Render("● GOOGLE GEMINI ACTIVE")
+	} else if strings.HasPrefix(currentKeyVal, "sk-ant-") {
+		activeProviderBadge = styles.BadgeLiveStyle.Render("● ANTHROPIC CLAUDE ACTIVE")
+	}
+
+	aiContent := aiHeaderBadge + "  " + activeProviderBadge + "  " + lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("(Powers natural language 'a' shortcut)") + "\n\n" +
 		c.aiKeyInput.View()
 
 	aiBox := aiBoxStyle.Render(aiContent)

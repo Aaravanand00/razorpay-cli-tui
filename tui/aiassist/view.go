@@ -2,6 +2,7 @@ package aiassist
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/razorpay/razorpay-cli/config"
@@ -163,7 +164,15 @@ func (m Model) renderInputView() string {
 func (m Model) renderLoadingView() string {
 	title := styles.TitleStyle.PaddingLeft(1).Render("🤖 Razorpay AI Assistant — Translating Request")
 
-	loadingText := fmt.Sprintf("%s  Translating prompt into Razorpay CLI command using Claude Haiku AI...", m.spinner.View())
+	provider := "AI"
+	apiKey := config.AIApiKey()
+	if strings.HasPrefix(apiKey, "sk-ant-") {
+		provider = "Claude"
+	} else if strings.HasPrefix(apiKey, "AQ.") || strings.HasPrefix(apiKey, "AIza") {
+		provider = "Gemini"
+	}
+
+	loadingText := fmt.Sprintf("%s  Translating prompt into Razorpay CLI command using %s AI...", m.spinner.View(), provider)
 
 	loadingCard := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

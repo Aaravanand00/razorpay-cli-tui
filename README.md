@@ -73,7 +73,7 @@ $ razorpay --version
 razorpay version v1.0.9
 ```
 
-Other options — Homebrew-style manual download, `go install`, building from source — are in [docs/install.md](docs/install.md).
+Other options (Homebrew-style manual download, `go install`, building from source) are in [docs/install.md](docs/install.md).
 
 ## Configuration
 
@@ -86,7 +86,7 @@ Razorpay Key Secret [None]:
 Credentials saved to /Users/you/.razorpay/config.yaml
 ```
 
-Or pass credentials non-interactively — any flag you omit is prompted for:
+Or pass credentials non-interactively (any flag you omit is prompted for):
 
 ```bash
 razorpay configure --key-id rzp_test_xxxxxxxxxxxx --key-secret xxxxxxxxxxxxxxxxxxxx
@@ -99,11 +99,11 @@ export RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 export RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx
 ```
 
-Generate keys from the [Razorpay Dashboard](https://dashboard.razorpay.com/app/website-app-settings/api-keys) — `rzp_test_` for development, `rzp_live_` for production.
+Generate keys from the [Razorpay Dashboard](https://dashboard.razorpay.com/app/website-app-settings/api-keys): `rzp_test_` for development, `rzp_live_` for production.
 
 ## Examples
 
-All amounts are in the smallest currency unit (paise for INR — `50000` = ₹500.00).
+All amounts are in the smallest currency unit (paise for INR: `50000` = ₹500.00).
 
 ### Create an order
 
@@ -234,7 +234,7 @@ Run `razorpay <group> --help` to list subcommands, or `razorpay <group> <subcomm
 | Group           | What it manages                                       |
 | --------------- | ----------------------------------------------------- |
 | `configure`     | Save API credentials                                  |
-| `payments`      | Payments — capture, card details, downtime, transfers |
+| `payments`      | Payments (capture, card details, downtime, transfers) |
 | `orders`        | Orders                                                |
 | `customers`     | Customers                                             |
 | `refunds`       | Refunds                                               |
@@ -242,8 +242,8 @@ Run `razorpay <group> --help` to list subcommands, or `razorpay <group> <subcomm
 | `payment-links` | Payment Links                                         |
 | `qr-codes`      | QR Codes                                              |
 | `subscriptions` | Subscriptions and plans                               |
-| `route`         | Route — linked accounts and transfers                 |
-| `smart-collect` | Smart Collect — virtual accounts                      |
+| `route`         | Route (linked accounts and transfers)                 |
+| `smart-collect` | Smart Collect (virtual accounts)                      |
 | `settlements`   | Settlements and reconciliation                        |
 | `disputes`      | Disputes                                              |
 | `documents`     | Documents                                             |
@@ -258,7 +258,7 @@ cmd/
   cmdutil/           shared client + error helpers
   configure.go       `configure` command (lives in package cmd directly)
   root.go            root command + subpackage wiring
-api/                 HTTP client — auth, JSON pretty-print, multipart upload
+api/                 HTTP client (auth, JSON pretty-print, multipart upload)
 config/              config file + env-var loader (viper)
 tests/               end-to-end test suite (build tag `e2e`)
 docs/                per-resource usage guides
@@ -271,7 +271,7 @@ To add a subcommand to an existing resource, drop a new file into `cmd/<resource
 
 ## Build and test
 
-Every dev workflow has a `make` target — prefer those over invoking `go` directly so flags, build tags, and lint versions stay in one place.
+Every dev workflow has a `make` target. Prefer those over invoking `go` directly so flags, build tags, and lint versions stay in one place.
 
 ```bash
 make setup                # download Go module dependencies
@@ -296,7 +296,7 @@ See [tests/README.md](tests/README.md) for the layout of the test suite and how 
 
 ## Documentation
 
-- [docs/install.md](docs/install.md) — platform-specific install
+- [docs/install.md](docs/install.md): platform-specific install
 - Per-resource guides: [payments](docs/payments.md) · [orders](docs/orders.md) · [customers](docs/customers.md) · [refunds](docs/refunds.md) · [settlements](docs/settlements.md) · [disputes](docs/disputes.md)
-- [CHANGELOG.md](CHANGELOG.md) — release notes
-- [AGENTS.md](AGENTS.md) — agent guidance for working in this repository
+- [CHANGELOG.md](CHANGELOG.md): release notes
+- [AGENTS.md](AGENTS.md): agent guidance for working in this repository
