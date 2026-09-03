@@ -291,3 +291,28 @@ func TestHelpScreenAndGlobalToggle(t *testing.T) {
 		t.Fatalf("expected return to ScreenHome after 'h' toggle, got %v", m.state.CurrentScreen)
 	}
 }
+
+func TestAIAssistToggleAndPreview(t *testing.T) {
+	var model tea.Model = NewModel()
+	model, _ = model.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Press 'a' to open AI Assist
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+	m := model.(Model)
+	if m.state.CurrentScreen != state.ScreenAIAssist {
+		t.Fatalf("expected ScreenAIAssist, got %v", m.state.CurrentScreen)
+	}
+
+	view := m.View()
+	if !strings.Contains(view, "AI Assistant") && !strings.Contains(view, "AI Assist") {
+		t.Fatal("expected AI Assist header in view")
+	}
+
+	// Press 'a' to close AI Assist
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	m = model.(Model)
+	if m.state.CurrentScreen != state.ScreenHome {
+		t.Fatalf("expected return to ScreenHome after 'a' toggle, got %v", m.state.CurrentScreen)
+	}
+}

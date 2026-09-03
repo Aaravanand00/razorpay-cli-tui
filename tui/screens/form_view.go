@@ -79,6 +79,21 @@ func NewFormViewScreen(s *state.SessionState, action state.ActionItem, width, he
 	}
 }
 
+// PopulateWithFlags populates form fields with flag values (e.g. from AI suggestion).
+func (fv *FormViewScreen) PopulateWithFlags(flags map[string]string) {
+	if len(flags) == 0 {
+		return
+	}
+	for i := range fv.fields {
+		k := fv.fields[i].Key
+		if val, exists := flags[k]; exists {
+			fv.fields[i].Input.SetValue(val)
+		} else if val, exists := flags[strings.ReplaceAll(k, "_", "-")]; exists {
+			fv.fields[i].Input.SetValue(val)
+		}
+	}
+}
+
 func (fv *FormViewScreen) SetSize(width, height int) {
 	if !fv.initialized || fv.state == nil {
 		return

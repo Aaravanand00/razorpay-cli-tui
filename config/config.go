@@ -38,9 +38,12 @@ func Init() {
 	_ = viper.BindEnv("key_id", "RAZORPAY_KEY_ID")
 	_ = viper.BindEnv("key_secret", "RAZORPAY_KEY_SECRET")
 	_ = viper.BindEnv("output_format", "RAZORPAY_OUTPUT_FORMAT")
+	_ = viper.BindEnv("ai_api_key", "RAZORPAY_AI_API_KEY")
+	_ = viper.BindEnv("ai_provider", "RAZORPAY_AI_PROVIDER")
 
 	viper.SetDefault("output_format", output.DefaultFormat)
 	viper.SetDefault("active_mode", "test")
+	viper.SetDefault("ai_provider", "anthropic")
 
 	_ = viper.ReadInConfig()
 }
@@ -175,6 +178,39 @@ func SaveDualConfig(activeMode, testKeyID, testKeySecret, liveKeyID, liveKeySecr
 	} else if strings.HasPrefix(testKeyID, "rzp_test_") {
 		viper.Set("key_id", testKeyID)
 		viper.Set("key_secret", testKeySecret)
+	}
+
+	return viper.WriteConfigAs(filepath.Join(dir, configFile+"."+configType))
+}
+
+// AIApiKey returns the configured AI API key (e.g. Anthropic API key).
+func AIApiKey() string {
+	return strings.TrimSpace(viper.GetString("ai_api_key"))
+}
+
+// AIProvider returns the configured AI provider (defaults to "anthropic").
+func AIProvider() string {
+	p := strings.TrimSpace(viper.GetString("ai_provider"))
+	if p == "" {
+		return "anthropic"
+	}
+	return p
+}
+
+// SaveAIConfig saves AI assistant settings into config file.
+func SaveAIConfig(apiKey, provider string) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	dir := filepath.Join(home, configDir)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
+	viper.Set("ai_api_key", apiKey)
+	if provider != "" {
+		viper.Set("ai_provider", provider)
 	}
 
 	return viper.WriteConfigAs(filepath.Join(dir, configFile+"."+configType))

@@ -106,6 +106,7 @@ func (h HelpScreen) View() string {
 		formatShortcutRow("q / Ctrl+C", "Quit Razorpay TUI") + "\n" +
 		formatShortcutRow("? / h", "Toggle this Help modal") + "\n" +
 		formatShortcutRow("c", "Open Credentials Configuration") + "\n" +
+		formatShortcutRow("a / ctrl+a", "Open AI Assistant (Natural Language)") + "\n" +
 		formatShortcutRow("/", "Fuzzy search actions & modules") + "\n" +
 		formatShortcutRow("r", "Refresh table via live REST API") + "\n" +
 		formatShortcutRow("Tab / v / 1 / 2", "Toggle Summary ⇄ Raw JSON") + "\n" +

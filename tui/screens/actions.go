@@ -357,6 +357,7 @@ func (a ActionsScreen) View() string {
 		keys = []components.KeyHelp{
 			{Key: "↑/↓", Desc: "Navigate"},
 			{Key: "Enter", Desc: "Open Action"},
+			{Key: "a", Desc: "AI Assist"},
 			{Key: "/", Desc: "Search"},
 			{Key: "?/h", Desc: "Help"},
 			{Key: "Esc", Desc: "Back"},

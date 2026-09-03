@@ -1,21 +1,25 @@
 package tui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/razorpay/razorpay-cli/tui/aiassist"
 	"github.com/razorpay/razorpay-cli/tui/screens"
 	"github.com/razorpay/razorpay-cli/tui/state"
 )
 
 type Model struct {
-	state   *state.SessionState
-	home    screens.HomeScreen
-	actions screens.ActionsScreen
-	table   screens.TableViewScreen
-	detail  screens.DetailViewScreen
-	form    screens.FormViewScreen
-	config  screens.ConfigScreen
-	help    screens.HelpScreen
-	ready   bool
+	state    *state.SessionState
+	home     screens.HomeScreen
+	actions  screens.ActionsScreen
+	table    screens.TableViewScreen
+	detail   screens.DetailViewScreen
+	form     screens.FormViewScreen
+	config   screens.ConfigScreen
+	help     screens.HelpScreen
+	aiAssist aiassist.Model
+	ready    bool
 }
 
 func NewModel() Model {
@@ -40,11 +44,12 @@ func NewModelWithOptions(readOnly bool, initialMode string) Model {
 	}
 
 	return Model{
-		state:  sess,
-		home:   screens.NewHomeScreen(sess, 80, 24),
-		config: screens.NewConfigScreen(sess, 80, 24),
-		help:   screens.NewHelpScreen(sess, 80, 24),
-		ready:  false,
+		state:    sess,
+		home:     screens.NewHomeScreen(sess, 80, 24),
+		config:   screens.NewConfigScreen(sess, 80, 24),
+		help:     screens.NewHelpScreen(sess, 80, 24),
+		aiAssist: aiassist.New(sess, 80, 24),
+		ready:    false,
 	}
 }
 
@@ -70,8 +75,54 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.detail.SetSize(msg.Width, msg.Height)
 		m.form.SetSize(msg.Width, msg.Height)
 		m.help.SetSize(msg.Width, msg.Height)
+		m.aiAssist.SetSize(msg.Width, msg.Height)
 		m.ready = true
 		return m, nil
+
+	case aiassist.ExecuteSuggestionMsg:
+		if msg.Suggestion == nil {
+			return m, nil
+		}
+		// Unified Action Execution Path: find matching module & action
+		targetMod := strings.ToLower(strings.TrimSpace(msg.Suggestion.Resource))
+		targetSub := strings.ToLower(strings.TrimSpace(msg.Suggestion.Subcommand))
+
+		availableActions := screens.GetActionsForModule(targetMod)
+		var matchedAction *state.ActionItem
+		for _, a := range availableActions {
+			if strings.Contains(strings.ToLower(a.CLICommand), targetSub) ||
+				strings.Contains(strings.ToLower(a.ID), targetSub) {
+				matchedAction = &a
+				break
+			}
+		}
+
+		if matchedAction == nil && len(availableActions) > 0 {
+			matchedAction = &availableActions[0]
+		}
+
+		if matchedAction != nil {
+			// Enforce existing safety rules (Read-Only Mode lock + Credentials validation)
+			allowed, errMsg := m.state.CanPerformActionItem(*matchedAction)
+			if !allowed {
+				m.state.SetToast(errMsg, true)
+				return m, nil
+			}
+
+			m.state.SelectedAction = *matchedAction
+			if !matchedAction.IsForm {
+				// Table List Action
+				m.state.PushScreen(state.ScreenTable, matchedAction.Title)
+				m.table = screens.NewTableViewScreen(m.state, *matchedAction, m.state.Width, m.state.Height)
+				cmds = append(cmds, m.table.Init())
+			} else {
+				// Form / Mutation Action
+				m.state.PushScreen(state.ScreenForm, matchedAction.Title)
+				m.form = screens.NewFormViewScreen(m.state, *matchedAction, m.state.Width, m.state.Height)
+				m.form.PopulateWithFlags(msg.Suggestion.Flags)
+			}
+			return m, tea.Batch(cmds...)
+		}
 
 	case tea.KeyMsg:
 		// Global Help Toggle ('?' or 'h' key)
@@ -81,10 +132,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			} else if m.state.CurrentScreen != state.ScreenForm &&
 				m.state.CurrentScreen != state.ScreenConfig &&
+				m.state.CurrentScreen != state.ScreenAIAssist &&
 				!m.home.IsFiltering() &&
 				!m.actions.IsFiltering() {
 				m.state.PushScreen(state.ScreenHelp, "❓ Help")
 				m.help = screens.NewHelpScreen(m.state, m.state.Width, m.state.Height)
+				return m, nil
+			}
+		}
+
+		// Global AI Assist Toggle ('a' or 'ctrl+a' key)
+		if msg.String() == "a" || msg.String() == "ctrl+a" {
+			if m.state.CurrentScreen == state.ScreenAIAssist {
+				m.state.PopScreen()
+				return m, nil
+			} else if m.state.CurrentScreen != state.ScreenForm &&
+				m.state.CurrentScreen != state.ScreenConfig &&
+				!m.home.IsFiltering() &&
+				!m.actions.IsFiltering() {
+				m.state.PushScreen(state.ScreenAIAssist, "🤖 AI Assist")
+				m.aiAssist = aiassist.New(m.state, m.state.Width, m.state.Height)
 				return m, nil
 			}
 		}
@@ -185,6 +252,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.help, cmd = m.help.Update(msg)
 		cmds = append(cmds, cmd)
+
+	case state.ScreenAIAssist:
+		var cmd tea.Cmd
+		m.aiAssist, cmd = m.aiAssist.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
@@ -210,6 +282,8 @@ func (m Model) View() string {
 		return m.config.View()
 	case state.ScreenHelp:
 		return m.help.View()
+	case state.ScreenAIAssist:
+		return m.aiAssist.View()
 	default:
 		return m.home.View()
 	}

@@ -119,6 +119,7 @@ func (dv DetailViewScreen) View() string {
 	keys := []components.KeyHelp{
 		{Key: "Tab / v", Desc: "Switch Mode"},
 		{Key: "↑/↓", Desc: "Scroll JSON"},
+		{Key: "a", Desc: "AI Assist"},
 		{Key: "c", Desc: "Config"},
 		{Key: "?/h", Desc: "Help"},
 		{Key: "Esc", Desc: "Back to Table"},

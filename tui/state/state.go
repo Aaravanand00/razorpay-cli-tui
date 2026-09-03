@@ -20,6 +20,7 @@ const (
 	ScreenForm
 	ScreenConfig
 	ScreenHelp
+	ScreenAIAssist
 )
 
 type Toast struct {

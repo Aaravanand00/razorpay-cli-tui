@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/razorpay/razorpay-cli/ai"
 	"github.com/razorpay/razorpay-cli/tui"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,7 @@ for the Razorpay API. It lets you browse, search, create and manage all
 Razorpay resources (orders, payments, refunds, invoices, etc.) without having
 to remember individual CLI flags or command names.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ai.SetGlobalRootCommand(rootCmd)
 		initialMode := ""
 		if tuiLiveMode {
 			initialMode = "live"

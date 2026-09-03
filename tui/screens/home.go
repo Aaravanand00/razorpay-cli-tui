@@ -194,7 +194,8 @@ func (h HomeScreen) View() string {
 	} else {
 		keys = []components.KeyHelp{
 			{Key: "↑/↓", Desc: "Navigate"},
-			{Key: "Enter", Desc: "Select Module"},
+			{Key: "Enter", Desc: "Select"},
+			{Key: "a", Desc: "AI Assist"},
 			{Key: "/", Desc: "Search"},
 			{Key: "c", Desc: "Config"},
 			{Key: "?/h", Desc: "Help"},

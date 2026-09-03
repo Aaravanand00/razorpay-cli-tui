@@ -19,7 +19,8 @@ type ConfigScreen struct {
 	testSecInput textinput.Model
 	liveKeyInput textinput.Model
 	liveSecInput textinput.Model
-	focusIndex   int // 0: mode switch, 1: test key, 2: test secret, 3: live key, 4: live secret
+	aiKeyInput   textinput.Model
+	focusIndex   int // 0: mode switch, 1: test key, 2: test secret, 3: live key, 4: live secret, 5: ai key
 	width        int
 	height       int
 }
@@ -61,6 +62,16 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 	lsi.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
 	lsi.Width = 36
 
+	aki := textinput.New()
+	aki.Placeholder = "sk-ant-api03-... (Anthropic API Key)"
+	aki.SetValue(config.AIApiKey())
+	aki.EchoMode = textinput.EchoPassword
+	aki.EchoCharacter = '•'
+	aki.Prompt = " Anthropic Key: "
+	aki.PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
+	aki.TextStyle = lipgloss.NewStyle().Foreground(styles.ColorText)
+	aki.Width = 48
+
 	tki.Focus()
 
 	return ConfigScreen{
@@ -70,6 +81,7 @@ func NewConfigScreen(s *state.SessionState, width, height int) ConfigScreen {
 		testSecInput: tsi,
 		liveKeyInput: lki,
 		liveSecInput: lsi,
+		aiKeyInput:   aki,
 		focusIndex:   1,
 		width:        width,
 		height:       height,
@@ -88,10 +100,10 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab":
-			c.setFocus((c.focusIndex + 1) % 5)
+			c.setFocus((c.focusIndex + 1) % 6)
 			return *c, nil
 		case "shift+tab":
-			c.setFocus((c.focusIndex - 1 + 5) % 5)
+			c.setFocus((c.focusIndex - 1 + 6) % 6)
 			return *c, nil
 		case "down":
 			if c.focusIndex == 0 {
@@ -103,12 +115,14 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			} else if c.focusIndex == 3 {
 				c.setFocus(4)
 			} else if c.focusIndex == 4 {
+				c.setFocus(5)
+			} else if c.focusIndex == 5 {
 				c.setFocus(0)
 			}
 			return *c, nil
 		case "up":
 			if c.focusIndex == 0 {
-				c.setFocus(4)
+				c.setFocus(5)
 			} else if c.focusIndex == 1 {
 				c.setFocus(0)
 			} else if c.focusIndex == 2 {
@@ -117,6 +131,8 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				c.setFocus(2)
 			} else if c.focusIndex == 4 {
 				c.setFocus(3)
+			} else if c.focusIndex == 5 {
+				c.setFocus(4)
 			}
 			return *c, nil
 		case "left":
@@ -158,10 +174,11 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			testSec := strings.TrimSpace(c.testSecInput.Value())
 			liveKey := strings.TrimSpace(c.liveKeyInput.Value())
 			liveSec := strings.TrimSpace(c.liveSecInput.Value())
+			aiKey := strings.TrimSpace(c.aiKeyInput.Value())
 
 			// 1. Check if completely empty
-			if testKey == "" && testSec == "" && liveKey == "" && liveSec == "" {
-				cmd := c.state.SetToast("Please enter at least one valid Razorpay API Key ID and Secret", true)
+			if testKey == "" && testSec == "" && liveKey == "" && liveSec == "" && aiKey == "" {
+				cmd := c.state.SetToast("Please enter at least one valid API Key ID / Secret or Anthropic AI Key", true)
 				return *c, cmd
 			}
 
@@ -193,7 +210,7 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			}
 
 			// 3. Active Mode Lock Validation
-			if validationErr == "" {
+			if validationErr == "" && (testKey != "" || liveKey != "") {
 				if c.activeMode == "live" && (liveKey == "" || liveSec == "") {
 					if testKey != "" {
 						validationErr = "Active mode is set to LIVE, but Live keys are empty. Switch Active Environment to Test or enter Live keys."
@@ -215,10 +232,16 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			}
 
 			// 4. Save to config
-			err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
-			if err != nil {
-				cmd := c.state.SetToast("Failed to save config: "+err.Error(), true)
-				return *c, cmd
+			if testKey != "" || liveKey != "" {
+				err := config.SaveDualConfig(c.activeMode, testKey, testSec, liveKey, liveSec)
+				if err != nil {
+					cmd := c.state.SetToast("Failed to save config: "+err.Error(), true)
+					return *c, cmd
+				}
+			}
+
+			if aiKey != "" {
+				_ = config.SaveAIConfig(aiKey, "anthropic")
 			}
 
 			// 5. Update state
@@ -229,7 +252,7 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 			c.state.LiveKeySecret = liveSec
 			c.state.SyncActiveCredentials()
 
-			c.state.SetToast("Credentials & Active Profile saved successfully!", false)
+			c.state.SetToast("Configuration & API keys saved successfully!", false)
 			c.state.PopScreen()
 			return *c, nil
 		}
@@ -249,6 +272,9 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 	case 4:
 		c.liveSecInput, cmd = c.liveSecInput.Update(msg)
 		cmds = append(cmds, cmd)
+	case 5:
+		c.aiKeyInput, cmd = c.aiKeyInput.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	return *c, tea.Batch(cmds...)
@@ -261,6 +287,7 @@ func (c *ConfigScreen) setFocus(idx int) {
 	c.testSecInput.Blur()
 	c.liveKeyInput.Blur()
 	c.liveSecInput.Blur()
+	c.aiKeyInput.Blur()
 
 	switch idx {
 	case 1:
@@ -271,6 +298,8 @@ func (c *ConfigScreen) setFocus(idx int) {
 		c.liveKeyInput.Focus()
 	case 4:
 		c.liveSecInput.Focus()
+	case 5:
+		c.aiKeyInput.Focus()
 	}
 }
 
@@ -388,12 +417,31 @@ func (c ConfigScreen) View() string {
 
 	boxesRow := lipgloss.JoinHorizontal(lipgloss.Top, testBoxStyle.Render(testContent), "    ", liveBoxStyle.Render(liveContent))
 
-	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).PaddingLeft(1).Render("💡 Format: Test Key starts with 'rzp_test_...', Live Key with 'rzp_live_...'. Press 'Tab' to move.")
+	// AI Box Styling
+	aiBorderColor := styles.ColorBorder
+	aiHeaderBadge := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("🤖 ANTHROPIC AI ASSIST (OPTIONAL)")
+	if c.focusIndex == 5 {
+		aiBorderColor = styles.ColorSecondary
+		aiHeaderBadge = lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary).Render("▶ 🤖 ANTHROPIC AI ASSIST (TYPING HERE)")
+	}
+
+	aiBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(aiBorderColor).
+		Padding(1, 2).
+		Width(c.width - 6)
+
+	aiContent := aiHeaderBadge + "  " + lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("(Powers natural language 'a' shortcut)") + "\n\n" +
+		c.aiKeyInput.View()
+
+	aiBox := aiBoxStyle.Render(aiContent)
+
+	tip := lipgloss.NewStyle().Foreground(styles.ColorMuted).PaddingLeft(1).Render("💡 Press [Tab] / [Shift+Tab] to navigate fields • [Enter] to Save • [Esc] to cancel")
 
 	title := styles.TitleStyle.PaddingLeft(1).Render("⚙️  Razorpay API Credentials & Dual Profile Manager")
 	desc := styles.SubtitleStyle.PaddingLeft(1).Render("Manage Sandbox & Production keys. Saved securely to ~/.razorpay/config.yaml")
 
-	rawBody := "\n" + title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + tip
+	rawBody := "\n" + title + "\n" + desc + "\n\n" + modeSwitch + "\n\n" + boxesRow + "\n\n" + aiBox + "\n\n" + tip
 
 	bodyContainer := lipgloss.NewStyle().
 		Height(bodyHeight).

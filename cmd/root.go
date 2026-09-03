@@ -61,6 +61,11 @@ func Execute() {
 	}
 }
 
+// GetRootCmd returns the root cobra command for introspection.
+func GetRootCmd() *cobra.Command {
+	return rootCmd
+}
+
 // newClient and handleErr are thin wrappers around cmdutil so that the
 // remaining flat cmd/*.go files (payments, customers, etc.) need no changes.
 func newClient() *api.Client {

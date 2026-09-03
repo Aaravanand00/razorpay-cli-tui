@@ -537,6 +537,7 @@ func (tv TableViewScreen) View() string {
 	keys := []components.KeyHelp{
 		{Key: "↑/↓", Desc: "Navigate"},
 		{Key: "Enter", Desc: "Inspect Record"},
+		{Key: "a", Desc: "AI Assist"},
 		{Key: "r", Desc: "Refresh"},
 		{Key: "c", Desc: "Config"},
 		{Key: "?/h", Desc: "Help"},
