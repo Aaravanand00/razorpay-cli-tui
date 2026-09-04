@@ -304,6 +304,24 @@ func (a *ActionsScreen) Update(msg tea.Msg) (ActionsScreen, tea.Cmd) {
 				a.list.ResetFilter()
 				return *a, nil
 			}
+			if msg.String() == "enter" {
+				if sel, ok := a.list.SelectedItem().(actionItem); ok {
+					a.list.ResetFilter()
+					a.state.SelectedAction = sel.action
+					if sel.action.IsForm {
+						// Enforce write/edit permission check
+						allowed, errMsg := a.state.CanPerformActionItem(sel.action)
+						if !allowed {
+							toastCmd := a.state.SetToast(errMsg, true)
+							return *a, toastCmd
+						}
+						a.state.PushScreen(state.ScreenForm, sel.action.Title)
+					} else {
+						a.state.PushScreen(state.ScreenTable, sel.action.Title)
+					}
+					return *a, nil
+				}
+			}
 			break
 		}
 		switch msg.String() {
@@ -350,7 +368,7 @@ func (a ActionsScreen) View() string {
 	var keys []components.KeyHelp
 	if a.list.FilterState() == list.Filtering {
 		keys = []components.KeyHelp{
-			{Key: "Enter", Desc: "Apply Filter"},
+			{Key: "Enter", Desc: "Open Selected"},
 			{Key: "Esc", Desc: "Cancel Search"},
 		}
 	} else {

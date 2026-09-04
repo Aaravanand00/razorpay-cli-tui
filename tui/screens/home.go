@@ -143,6 +143,18 @@ func (h *HomeScreen) Update(msg tea.Msg) (HomeScreen, tea.Cmd) {
 				h.list.ResetFilter()
 				return *h, nil
 			}
+			if msg.String() == "enter" {
+				if sel, ok := h.list.SelectedItem().(moduleItem); ok {
+					h.list.ResetFilter()
+					h.state.SelectedModule = sel.module
+					if sel.module.ID == "configure" {
+						h.state.PushScreen(state.ScreenConfig, "⚙️ Configure")
+					} else {
+						h.state.PushScreen(state.ScreenActions, sel.module.Title)
+					}
+					return *h, nil
+				}
+			}
 			break
 		}
 		switch msg.String() {
@@ -188,7 +200,7 @@ func (h HomeScreen) View() string {
 	var keys []components.KeyHelp
 	if h.list.FilterState() == list.Filtering {
 		keys = []components.KeyHelp{
-			{Key: "Enter", Desc: "Apply Filter"},
+			{Key: "Enter", Desc: "Open Selected"},
 			{Key: "Esc", Desc: "Cancel Search"},
 		}
 	} else {
