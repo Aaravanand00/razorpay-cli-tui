@@ -127,7 +127,15 @@ func (tv *TableViewScreen) fetchDataCmd() tea.Cmd {
 		var items []map[string]interface{}
 
 		if respMap, ok := parsed.(map[string]interface{}); ok {
-			if rawItems, exists := respMap["items"]; exists {
+			var rawItems interface{}
+			for _, k := range []string{"items", "payment_links", "invoices", "qr_codes", "subscriptions", "settlements", "transfers"} {
+				if val, exists := respMap[k]; exists && val != nil {
+					rawItems = val
+					break
+				}
+			}
+
+			if rawItems != nil {
 				if itemList, ok := rawItems.([]interface{}); ok {
 					for _, it := range itemList {
 						if itemMap, ok := it.(map[string]interface{}); ok {
