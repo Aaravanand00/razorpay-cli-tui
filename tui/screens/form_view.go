@@ -289,6 +289,16 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 			payload[f.Key] = val
 		}
 
+		// QR Codes payload normalization (Razorpay API expects type=upi_qr and payment_amount in paise)
+		if strings.Contains(fv.action.ID, "qr") && strings.Contains(fv.action.ID, "create") {
+			payload["type"] = "upi_qr"
+			if amt, ok := payload["amount"]; ok {
+				payload["payment_amount"] = amt
+				payload["fixed_amount"] = true
+				delete(payload, "amount")
+			}
+		}
+
 		var respBytes []byte
 		var err error
 
@@ -422,8 +432,9 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 
 	if strings.Contains(id, "qr") && strings.Contains(id, "create") {
 		return []FormField{
-			{Key: "usage", Label: "Usage Type", Placeholder: "single_use / multiple_use", Required: true, Input: createInput("single_use", false)},
-			{Key: "fixed_amount", Label: "Fixed Amount (₹ INR)", Placeholder: "e.g. 250.00 (optional)", IsAmount: true, Input: createInput("", false)},
+			{Key: "name", Label: "QR Code Name", Placeholder: "e.g. Store Front Counter QR", Required: true, Input: createInput("Store Front QR", false)},
+			{Key: "usage", Label: "Usage Type", Placeholder: "single_use or multiple_use", Required: true, Input: createInput("single_use", false)},
+			{Key: "amount", Label: "Payment Amount (₹ INR)", Placeholder: "e.g. 100.00 (leave blank for dynamic)", IsAmount: true, Input: createInput("100.00", false)},
 			{Key: "description", Label: "QR Description", Placeholder: "e.g. Store checkout counter QR", Input: createInput("Store counter QR", false)},
 		}
 	}
