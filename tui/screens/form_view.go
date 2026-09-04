@@ -332,6 +332,49 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 			}
 		}
 
+		// Plans payload normalization
+		if strings.Contains(fv.action.ID, "plans") && strings.Contains(fv.action.ID, "create") {
+			item := make(map[string]interface{})
+			if name, ok := payload["name"]; ok {
+				item["name"] = name
+				delete(payload, "name")
+			}
+			if amt, ok := payload["amount"]; ok {
+				item["amount"] = amt
+				delete(payload, "amount")
+			}
+			if curr, ok := payload["currency"]; ok {
+				item["currency"] = curr
+				delete(payload, "currency")
+			} else {
+				item["currency"] = "INR"
+			}
+			if desc, ok := payload["description"]; ok {
+				item["description"] = desc
+				delete(payload, "description")
+			}
+			payload["item"] = item
+			if intervalVal, ok := payload["interval"]; ok {
+				if intervalInt, err := strconv.Atoi(fmt.Sprintf("%v", intervalVal)); err == nil {
+					payload["interval"] = intervalInt
+				}
+			}
+		}
+
+		// Subscriptions create total_count & quantity integer conversion
+		if strings.Contains(fv.action.ID, "subs-create") {
+			if tc, ok := payload["total_count"]; ok {
+				if tcInt, err := strconv.Atoi(fmt.Sprintf("%v", tc)); err == nil {
+					payload["total_count"] = tcInt
+				}
+			}
+			if qty, ok := payload["quantity"]; ok {
+				if qtyInt, err := strconv.Atoi(fmt.Sprintf("%v", qty)); err == nil {
+					payload["quantity"] = qtyInt
+				}
+			}
+		}
+
 		var respBytes []byte
 		var err error
 
@@ -391,7 +434,8 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 
 	id := action.ID
 
-	if strings.Contains(id, "create") && strings.Contains(id, "order") {
+	// 1. ORDERS MODULE
+	if id == "orders-create" {
 		return []FormField{
 			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 500 (will auto-convert to 50000 paise)", Required: true, IsAmount: true, Input: createInput("500.00", false)},
 			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
@@ -399,9 +443,231 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 			{Key: "notes", Label: "Notes / Description", Placeholder: "e.g. Order for premium subscription", Input: createInput("Order note", false)},
 		}
 	}
+	if id == "orders-update" {
+		return []FormField{
+			{Key: "id", Label: "Order ID", Placeholder: "e.g. order_xxx", Required: true, Input: createInput("order_xxx", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated customer delivery tag", Input: createInput("Updated notes", false)},
+		}
+	}
+	if id == "orders-fetch" || id == "orders-payments" {
+		return []FormField{
+			{Key: "id", Label: "Order ID", Placeholder: "e.g. order_xxx", Required: true, Input: createInput("order_xxx", false)},
+		}
+	}
 
-	if strings.Contains(id, "fetch") || strings.Contains(id, "payments") {
-		resName := "Record"
+	// 2. PAYMENTS MODULE
+	if id == "payments-capture" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 500.00", Required: true, IsAmount: true, Input: createInput("500.00", false)},
+			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
+		}
+	}
+	if id == "payments-update" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Internal tracking notes", Input: createInput("Updated notes", false)},
+		}
+	}
+	if id == "payments-fetch" || id == "payments-card" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+		}
+	}
+	if id == "payments-downtime-fetch" {
+		return []FormField{
+			{Key: "id", Label: "Downtime ID", Placeholder: "e.g. down_xxx", Required: true, Input: createInput("down_xxx", false)},
+		}
+	}
+
+	// 3. REFUNDS MODULE
+	if id == "refunds-create" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 500 (leave blank for full refund)", IsAmount: true, Input: createInput("", false)},
+			{Key: "speed", Label: "Speed", Placeholder: "normal / optimum", Input: createInput("normal", false)},
+			{Key: "notes", Label: "Refund Reason / Notes", Placeholder: "e.g. Customer return request", Input: createInput("Customer return", false)},
+		}
+	}
+	if id == "refunds-update" {
+		return []FormField{
+			{Key: "id", Label: "Refund ID", Placeholder: "e.g. rfr_xxx", Required: true, Input: createInput("rfr_xxx", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated refund note", Input: createInput("Updated notes", false)},
+		}
+	}
+	if id == "refunds-fetch" {
+		return []FormField{
+			{Key: "id", Label: "Refund ID", Placeholder: "e.g. rfr_xxx", Required: true, Input: createInput("rfr_xxx", false)},
+		}
+	}
+	if id == "refunds-payment-refunds" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+		}
+	}
+	if id == "refunds-payment-refund" {
+		return []FormField{
+			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
+			{Key: "refund_id", Label: "Refund ID", Placeholder: "e.g. rfr_xxx", Required: true, Input: createInput("rfr_xxx", false)},
+		}
+	}
+
+	// 4. CUSTOMERS MODULE
+	if id == "customers-create" {
+		return []FormField{
+			{Key: "name", Label: "Customer Name", Placeholder: "e.g. Rahul Sharma", Required: true, Input: createInput("Rahul Sharma", false)},
+			{Key: "email", Label: "Email Address", Placeholder: "e.g. rahul@example.com", Required: true, Input: createInput("rahul@example.com", false)},
+			{Key: "contact", Label: "Phone / Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
+			{Key: "notes", Label: "Customer Notes", Placeholder: "e.g. VIP Customer", Input: createInput("VIP Customer", false)},
+		}
+	}
+	if id == "customers-update" {
+		return []FormField{
+			{Key: "id", Label: "Customer ID", Placeholder: "e.g. cust_xxx", Required: true, Input: createInput("cust_xxx", false)},
+			{Key: "name", Label: "Customer Name", Placeholder: "e.g. Rahul Sharma (Updated)", Input: createInput("", false)},
+			{Key: "email", Label: "Email Address", Placeholder: "e.g. rahul.new@example.com", Input: createInput("", false)},
+			{Key: "contact", Label: "Phone / Contact", Placeholder: "e.g. 9876543210 (auto +91)", Input: createInput("", false)},
+			{Key: "notes", Label: "Customer Notes", Placeholder: "e.g. Updated metadata", Input: createInput("", false)},
+		}
+	}
+	if id == "customers-fetch" {
+		return []FormField{
+			{Key: "id", Label: "Customer ID", Placeholder: "e.g. cust_xxx", Required: true, Input: createInput("cust_xxx", false)},
+		}
+	}
+
+	// 5. PAYMENT LINKS MODULE
+	if id == "payment-links-create" {
+		return []FormField{
+			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 999.00", Required: true, IsAmount: true, Input: createInput("999.00", false)},
+			{Key: "description", Label: "Description", Placeholder: "e.g. Payment for Invoice #102", Required: true, Input: createInput("Payment for order", false)},
+			{Key: "customer_name", Label: "Customer Name", Placeholder: "e.g. Amit Kumar", Input: createInput("Amit Kumar", false)},
+			{Key: "customer_email", Label: "Customer Email", Placeholder: "e.g. amit@example.com", Input: createInput("amit@example.com", false)},
+			{Key: "customer_contact", Label: "Customer Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
+		}
+	}
+	if id == "payment-links-update" {
+		return []FormField{
+			{Key: "id", Label: "Payment Link ID", Placeholder: "e.g. plink_xxx", Required: true, Input: createInput("plink_xxx", false)},
+			{Key: "reference_id", Label: "Reference ID", Placeholder: "e.g. ref_12345", Input: createInput("", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated link notes", Input: createInput("", false)},
+		}
+	}
+	if id == "payment-links-fetch" || id == "payment-links-cancel" {
+		return []FormField{
+			{Key: "id", Label: "Payment Link ID", Placeholder: "e.g. plink_xxx", Required: true, Input: createInput("plink_xxx", false)},
+		}
+	}
+	if id == "payment-links-notify" {
+		return []FormField{
+			{Key: "id", Label: "Payment Link ID", Placeholder: "e.g. plink_xxx", Required: true, Input: createInput("plink_xxx", false)},
+			{Key: "medium", Label: "Notify Medium", Placeholder: "sms or email", Required: true, Input: createInput("sms", false)},
+		}
+	}
+
+	// 6. INVOICES MODULE
+	if id == "invoices-create" {
+		return []FormField{
+			{Key: "customer_id", Label: "Customer ID", Placeholder: "e.g. cust_xxx", Required: true, Input: createInput("cust_xxx", false)},
+			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 1500.00", Required: true, IsAmount: true, Input: createInput("1500.00", false)},
+			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
+			{Key: "description", Label: "Invoice Description", Placeholder: "e.g. Web development services", Input: createInput("Consulting services", false)},
+		}
+	}
+	if id == "invoices-update" {
+		return []FormField{
+			{Key: "id", Label: "Invoice ID", Placeholder: "e.g. inv_xxx", Required: true, Input: createInput("inv_xxx", false)},
+			{Key: "description", Label: "Description", Placeholder: "e.g. Updated invoice description", Input: createInput("", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated terms", Input: createInput("", false)},
+		}
+	}
+	if id == "invoices-fetch" || id == "invoices-issue" || id == "invoices-notify" || id == "invoices-cancel" || id == "invoices-delete" {
+		return []FormField{
+			{Key: "id", Label: "Invoice ID", Placeholder: "e.g. inv_xxx", Required: true, Input: createInput("inv_xxx", false)},
+		}
+	}
+	if id == "invoices-items-create" {
+		return []FormField{
+			{Key: "name", Label: "Item Name", Placeholder: "e.g. Cloud Hosting (1 Month)", Required: true, Input: createInput("Cloud Hosting", false)},
+			{Key: "amount", Label: "Unit Price (₹ INR)", Placeholder: "e.g. 499.00", Required: true, IsAmount: true, Input: createInput("499.00", false)},
+			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
+			{Key: "description", Label: "Item Description", Placeholder: "e.g. Monthly server hosting package", Input: createInput("Standard server hosting", false)},
+		}
+	}
+	if id == "invoices-items-update" {
+		return []FormField{
+			{Key: "id", Label: "Item ID", Placeholder: "e.g. item_xxx", Required: true, Input: createInput("item_xxx", false)},
+			{Key: "name", Label: "Item Name", Placeholder: "e.g. Cloud Hosting Pro", Input: createInput("", false)},
+			{Key: "amount", Label: "Unit Price (₹ INR)", Placeholder: "e.g. 799.00", IsAmount: true, Input: createInput("", false)},
+			{Key: "description", Label: "Description", Placeholder: "e.g. Upgraded package", Input: createInput("", false)},
+		}
+	}
+	if id == "invoices-items-fetch" || id == "invoices-items-delete" {
+		return []FormField{
+			{Key: "id", Label: "Item ID", Placeholder: "e.g. item_xxx", Required: true, Input: createInput("item_xxx", false)},
+		}
+	}
+
+	// 7. QR CODES MODULE
+	if id == "qr-codes-create" {
+		return []FormField{
+			{Key: "name", Label: "QR Code Name", Placeholder: "e.g. Store Front Counter QR", Required: true, Input: createInput("Store Front QR", false)},
+			{Key: "usage", Label: "Usage Type", Placeholder: "single_use or multiple_use", Required: true, Input: createInput("single_use", false)},
+			{Key: "amount", Label: "Payment Amount (₹ INR)", Placeholder: "e.g. 100.00 (leave blank for dynamic)", IsAmount: true, Input: createInput("100.00", false)},
+			{Key: "description", Label: "QR Description", Placeholder: "e.g. Store checkout counter QR", Input: createInput("Store counter QR", false)},
+		}
+	}
+	if id == "qr-codes-update" {
+		return []FormField{
+			{Key: "id", Label: "QR ID", Placeholder: "e.g. qr_xxx", Required: true, Input: createInput("qr_xxx", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated QR notes", Input: createInput("", false)},
+		}
+	}
+	if id == "qr-codes-fetch" || id == "qr-codes-payments" || id == "qr-codes-close" {
+		return []FormField{
+			{Key: "id", Label: "QR ID", Placeholder: "e.g. qr_xxx", Required: true, Input: createInput("qr_xxx", false)},
+		}
+	}
+
+	// 8. SUBSCRIPTIONS MODULE
+	if id == "subs-create" {
+		return []FormField{
+			{Key: "plan_id", Label: "Plan ID", Placeholder: "e.g. plan_xxx", Required: true, Input: createInput("plan_xxx", false)},
+			{Key: "total_count", Label: "Total Billing Cycles", Placeholder: "e.g. 12", Required: true, Input: createInput("12", false)},
+			{Key: "quantity", Label: "Quantity", Placeholder: "e.g. 1", Input: createInput("1", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. SaaS Pro Membership", Input: createInput("SaaS Pro Plan", false)},
+		}
+	}
+	if id == "subs-update" {
+		return []FormField{
+			{Key: "id", Label: "Subscription ID", Placeholder: "e.g. sub_xxx", Required: true, Input: createInput("sub_xxx", false)},
+			{Key: "plan_id", Label: "New Plan ID", Placeholder: "e.g. plan_xxx", Input: createInput("", false)},
+			{Key: "quantity", Label: "Quantity", Placeholder: "e.g. 2", Input: createInput("", false)},
+		}
+	}
+	if id == "subs-plans-create" {
+		return []FormField{
+			{Key: "period", Label: "Period", Placeholder: "weekly / monthly / yearly", Required: true, Input: createInput("monthly", false)},
+			{Key: "interval", Label: "Interval", Placeholder: "e.g. 1", Required: true, Input: createInput("1", false)},
+			{Key: "amount", Label: "Plan Price (₹ INR)", Placeholder: "e.g. 999.00", Required: true, IsAmount: true, Input: createInput("999.00", false)},
+			{Key: "name", Label: "Plan Name", Placeholder: "e.g. Silver Monthly Plan", Required: true, Input: createInput("Silver Monthly Plan", false)},
+			{Key: "description", Label: "Plan Description", Placeholder: "e.g. Recurring monthly membership", Input: createInput("Monthly membership", false)},
+		}
+	}
+	if id == "subs-plans-fetch" {
+		return []FormField{
+			{Key: "id", Label: "Plan ID", Placeholder: "e.g. plan_xxx", Required: true, Input: createInput("plan_xxx", false)},
+		}
+	}
+	if strings.Contains(id, "subs-") {
+		return []FormField{
+			{Key: "id", Label: "Subscription ID", Placeholder: "e.g. sub_xxx", Required: true, Input: createInput("sub_xxx", false)},
+		}
+	}
+
+	// Fallback for Fetch / Single ID operations
+	if strings.Contains(id, "fetch") || strings.Contains(id, "delete") || strings.Contains(id, "close") || strings.Contains(id, "accept") || strings.Contains(id, "contest") {
+		resName := "Entity"
 		if strings.Contains(id, "order") {
 			resName = "Order"
 		} else if strings.Contains(id, "payment") {
@@ -412,63 +678,13 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 			resName = "Customer"
 		} else if strings.Contains(id, "invoice") {
 			resName = "Invoice"
+		} else if strings.Contains(id, "dispute") {
+			resName = "Dispute"
+		} else if strings.Contains(id, "document") || strings.Contains(id, "doc") {
+			resName = "Document"
 		}
 		return []FormField{
 			{Key: "id", Label: fmt.Sprintf("%s ID", resName), Placeholder: fmt.Sprintf("e.g. %s_xxx", strings.ToLower(resName[:4])), Required: true, Input: createInput(fmt.Sprintf("%s_xxx", strings.ToLower(resName[:4])), false)},
-		}
-	}
-
-	if strings.Contains(id, "capture") {
-		return []FormField{
-			{Key: "id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
-			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 500", Required: true, IsAmount: true, Input: createInput("500.00", false)},
-			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
-		}
-	}
-
-	if strings.Contains(id, "refund") && strings.Contains(id, "create") {
-		return []FormField{
-			{Key: "payment_id", Label: "Payment ID", Placeholder: "e.g. pay_xxx", Required: true, Input: createInput("pay_xxx", false)},
-			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 500 (leave blank for full refund)", IsAmount: true, Input: createInput("", false)},
-			{Key: "speed", Label: "Speed", Placeholder: "normal / optimum", Input: createInput("normal", false)},
-			{Key: "notes", Label: "Refund Reason / Notes", Placeholder: "e.g. Customer return request", Input: createInput("Customer return", false)},
-		}
-	}
-
-	if strings.Contains(id, "customer") && strings.Contains(id, "create") {
-		return []FormField{
-			{Key: "name", Label: "Customer Name", Placeholder: "e.g. Rahul Sharma", Required: true, Input: createInput("Rahul Sharma", false)},
-			{Key: "email", Label: "Email Address", Placeholder: "e.g. rahul@example.com", Required: true, Input: createInput("rahul@example.com", false)},
-			{Key: "contact", Label: "Phone / Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
-			{Key: "notes", Label: "Customer Notes", Placeholder: "e.g. Enterprise client", Input: createInput("Enterprise client", false)},
-		}
-	}
-
-	if strings.Contains(id, "invoice") && strings.Contains(id, "create") {
-		return []FormField{
-			{Key: "customer_id", Label: "Customer ID", Placeholder: "e.g. cust_xxx", Required: true, Input: createInput("cust_xxx", false)},
-			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 1500.00", Required: true, IsAmount: true, Input: createInput("1500.00", false)},
-			{Key: "currency", Label: "Currency", Placeholder: "INR", Required: true, Input: createInput("INR", false)},
-			{Key: "description", Label: "Invoice Description", Placeholder: "e.g. Web development services", Input: createInput("Consulting services", false)},
-		}
-	}
-
-	if strings.Contains(id, "payment-link") && strings.Contains(id, "create") {
-		return []FormField{
-			{Key: "amount", Label: "Amount (₹ INR)", Placeholder: "e.g. 999.00", Required: true, IsAmount: true, Input: createInput("999.00", false)},
-			{Key: "description", Label: "Description", Placeholder: "e.g. Payment for Invoice #102", Required: true, Input: createInput("Payment for order", false)},
-			{Key: "customer_name", Label: "Customer Name", Placeholder: "e.g. Amit Kumar", Input: createInput("Amit Kumar", false)},
-			{Key: "customer_email", Label: "Customer Email", Placeholder: "e.g. amit@example.com", Input: createInput("amit@example.com", false)},
-			{Key: "customer_contact", Label: "Customer Contact", Placeholder: "e.g. 9876543210 (auto +91) or +14155552671", Input: createInput("9876543210", false)},
-		}
-	}
-
-	if strings.Contains(id, "qr") && strings.Contains(id, "create") {
-		return []FormField{
-			{Key: "name", Label: "QR Code Name", Placeholder: "e.g. Store Front Counter QR", Required: true, Input: createInput("Store Front QR", false)},
-			{Key: "usage", Label: "Usage Type", Placeholder: "single_use or multiple_use", Required: true, Input: createInput("single_use", false)},
-			{Key: "amount", Label: "Payment Amount (₹ INR)", Placeholder: "e.g. 100.00 (leave blank for dynamic)", IsAmount: true, Input: createInput("100.00", false)},
-			{Key: "description", Label: "QR Description", Placeholder: "e.g. Store checkout counter QR", Input: createInput("Store counter QR", false)},
 		}
 	}
 
