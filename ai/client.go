@@ -125,7 +125,7 @@ func (c *Client) GetSuggestion(userInput, context string) (*CommandSuggestion, e
 }
 
 func (c *Client) callGemini(userContent, systemPrompt string) (*CommandSuggestion, error) {
-	candidateModels := []string{"gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.6-flash"}
+	candidateModels := []string{"gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.0-flash", "gemini-flash-lite-latest"}
 	var lastErr error
 
 	reqPayload := geminiRequest{
@@ -140,6 +140,8 @@ func (c *Client) callGemini(userContent, systemPrompt string) (*CommandSuggestio
 		},
 		GenerationConfig: map[string]interface{}{
 			"response_mime_type": "application/json",
+			"maxOutputTokens":    512,
+			"temperature":        0.1,
 		},
 	}
 
