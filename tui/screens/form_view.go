@@ -289,6 +289,26 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 			payload[f.Key] = val
 		}
 
+		// Payment Links payload normalization (Razorpay API expects nested customer object)
+		if strings.Contains(fv.action.ID, "payment-link") && strings.Contains(fv.action.ID, "create") {
+			customer := make(map[string]interface{})
+			if name, ok := payload["customer_name"]; ok && fmt.Sprintf("%v", name) != "" {
+				customer["name"] = name
+				delete(payload, "customer_name")
+			}
+			if email, ok := payload["customer_email"]; ok && fmt.Sprintf("%v", email) != "" {
+				customer["email"] = email
+				delete(payload, "customer_email")
+			}
+			if contact, ok := payload["customer_contact"]; ok && fmt.Sprintf("%v", contact) != "" {
+				customer["contact"] = contact
+				delete(payload, "customer_contact")
+			}
+			if len(customer) > 0 {
+				payload["customer"] = customer
+			}
+		}
+
 		// QR Codes payload normalization (Razorpay API expects type=upi_qr and payment_amount in paise)
 		if strings.Contains(fv.action.ID, "qr") && strings.Contains(fv.action.ID, "create") {
 			payload["type"] = "upi_qr"
