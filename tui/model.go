@@ -172,7 +172,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.state.CurrentScreen == state.ScreenHome ||
 				m.state.CurrentScreen == state.ScreenActions ||
 				m.state.CurrentScreen == state.ScreenTable ||
-				m.state.CurrentScreen == state.ScreenDetail {
+				m.state.CurrentScreen == state.ScreenDetail ||
+				m.state.CurrentScreen == state.ScreenHelp ||
+				(m.state.CurrentScreen == state.ScreenForm && (m.form.IsSuccess() || m.form.IsError())) ||
+				(m.state.CurrentScreen == state.ScreenConfig && m.config.IsOnModeSelector()) {
 				return m, tea.Quit
 			}
 		case "esc":

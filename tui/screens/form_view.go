@@ -106,6 +106,14 @@ func (fv *FormViewScreen) PopulateWithFlags(flags map[string]string) {
 	}
 }
 
+func (fv FormViewScreen) IsSuccess() bool {
+	return fv.formState == FormStateSuccess
+}
+
+func (fv FormViewScreen) IsError() bool {
+	return fv.formState == FormStateError
+}
+
 func (fv *FormViewScreen) SetSize(width, height int) {
 	if !fv.initialized || fv.state == nil {
 		return
@@ -163,6 +171,11 @@ func (fv *FormViewScreen) Update(msg tea.Msg) (FormViewScreen, tea.Cmd) {
 				fv.fields[fv.focusedIdx].Input.Focus()
 				fv.state.ClearToast()
 				return *fv, textinput.Blink
+			}
+
+		case "q":
+			if fv.formState == FormStateError || fv.formState == FormStateSuccess {
+				return *fv, tea.Quit
 			}
 
 		case "a":

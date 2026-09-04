@@ -169,6 +169,10 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 				c.state.ClearToast()
 				return *c, nil
 			}
+		case "q":
+			if c.focusIndex == 0 {
+				return *c, tea.Quit
+			}
 		case "a":
 			if c.focusIndex == 0 {
 				c.state.PushScreen(state.ScreenAIAssist, "🤖 AI Assist")
@@ -283,6 +287,10 @@ func (c *ConfigScreen) Update(msg tea.Msg) (ConfigScreen, tea.Cmd) {
 	}
 
 	return *c, tea.Batch(cmds...)
+}
+
+func (c ConfigScreen) IsOnModeSelector() bool {
+	return c.focusIndex == 0
 }
 
 func (c *ConfigScreen) setFocus(idx int) {
