@@ -250,8 +250,8 @@ func (dv DetailViewScreen) renderSummaryCard() string {
 		"issued_at": true, "notes": true,
 	}
 
-	for k := range dv.data {
-		if !excludedKeys[k] {
+	for k, v := range dv.data {
+		if !excludedKeys[k] && v != nil && fmt.Sprintf("%v", v) != "<nil>" && fmt.Sprintf("%v", v) != "[]" && fmt.Sprintf("%v", v) != "map[]" {
 			remainingKeys = append(remainingKeys, k)
 		}
 	}
@@ -259,7 +259,11 @@ func (dv DetailViewScreen) renderSummaryCard() string {
 
 	for _, k := range remainingKeys {
 		val := fmt.Sprintf("%v", dv.data[k])
-		if len(val) > 60 {
+		// Format amount fields (like amount_due, amount_paid, refund_amount)
+		if strings.HasPrefix(strings.ToLower(k), "amount_") || strings.HasSuffix(strings.ToLower(k), "_amount") {
+			curr := fmt.Sprintf("%v", dv.data["currency"])
+			val = formatAmount(dv.data[k], curr)
+		} else if len(val) > 60 {
 			val = val[:57] + "..."
 		}
 		label := strings.Title(strings.ReplaceAll(k, "_", " "))

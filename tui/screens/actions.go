@@ -19,7 +19,7 @@ type actionItem struct {
 func (i actionItem) Title() string       { return i.action.Title }
 func (i actionItem) Description() string { return i.action.Description }
 func (i actionItem) FilterValue() string {
-	return i.action.ID + " " + i.action.Title + " " + i.action.Description + " " + i.action.CLICommand
+	return i.action.ID + " " + i.action.Title
 }
 
 type actionDelegate struct{}

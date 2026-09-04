@@ -19,7 +19,7 @@ type moduleItem struct {
 func (i moduleItem) Title() string       { return i.module.Title }
 func (i moduleItem) Description() string { return i.module.Description }
 func (i moduleItem) FilterValue() string {
-	return i.module.ID + " " + i.module.Title + " " + i.module.Description
+	return i.module.ID + " " + i.module.Title
 }
 
 type moduleDelegate struct{}
