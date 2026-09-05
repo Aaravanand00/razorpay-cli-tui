@@ -518,11 +518,11 @@ func formatStatus(status string) string {
 	st := strings.ToLower(strings.TrimSpace(status))
 	switch st {
 	case "paid", "captured", "active", "issued", "processed":
-		return "● paid"
+		return "\x1b[32;1m●\x1b[39;22m " + st
 	case "created", "authorized", "pending", "draft":
-		return "▲ created"
+		return "\x1b[33;1m▲\x1b[39;22m " + st
 	case "failed", "cancelled", "expired", "rejected", "closed":
-		return "✖ failed"
+		return "\x1b[31;1m✖\x1b[39;22m " + st
 	default:
 		if st == "<nil>" || st == "" {
 			return "-"
