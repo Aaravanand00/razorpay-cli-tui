@@ -21,3 +21,6 @@ razorpay-cli
 
 # macOS
 .DS_Store
+
+# Local Pitch & Demo scripts
+SCRIPT.md
