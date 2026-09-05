@@ -384,6 +384,11 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 			}
 		}
 
+		// Invoices update payload normalization
+		if fv.action.ID == "invoices-update" {
+			delete(payload, "description")
+		}
+
 		// Subscriptions create total_count & quantity integer conversion
 		if strings.Contains(fv.action.ID, "subs-create") {
 			if tc, ok := payload["total_count"]; ok {
@@ -600,8 +605,7 @@ func generateFieldsForAction(action state.ActionItem, width int) []FormField {
 	if id == "invoices-update" {
 		return []FormField{
 			{Key: "id", Label: "Invoice ID", Placeholder: "e.g. inv_xxx", Required: true, Input: createInput("inv_xxx", false)},
-			{Key: "description", Label: "Description", Placeholder: "e.g. Updated invoice description", Input: createInput("", false)},
-			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated terms", Input: createInput("", false)},
+			{Key: "notes", Label: "Notes / Metadata", Placeholder: "e.g. Updated terms or internal notes", Input: createInput("", false)},
 		}
 	}
 	if id == "invoices-fetch" || id == "invoices-issue" || id == "invoices-notify" || id == "invoices-cancel" || id == "invoices-delete" {
