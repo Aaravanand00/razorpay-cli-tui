@@ -361,6 +361,29 @@ func (fv *FormViewScreen) executeActionCmd() tea.Cmd {
 			}
 		}
 
+		// Invoices create payload normalization
+		if fv.action.ID == "invoices-create" {
+			payload["type"] = "invoice"
+			if amt, ok := payload["amount"]; ok {
+				desc := "Invoice Item"
+				if d, hasDesc := payload["description"]; hasDesc && fmt.Sprintf("%v", d) != "" {
+					desc = fmt.Sprintf("%v", d)
+				}
+				curr := "INR"
+				if c, hasCurr := payload["currency"]; hasCurr && fmt.Sprintf("%v", c) != "" {
+					curr = fmt.Sprintf("%v", c)
+				}
+				payload["line_items"] = []map[string]interface{}{
+					{
+						"name":     desc,
+						"amount":   amt,
+						"currency": curr,
+					},
+				}
+				delete(payload, "amount")
+			}
+		}
+
 		// Subscriptions create total_count & quantity integer conversion
 		if strings.Contains(fv.action.ID, "subs-create") {
 			if tc, ok := payload["total_count"]; ok {
